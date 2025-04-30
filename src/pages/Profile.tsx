@@ -1,10 +1,10 @@
-
 import { useParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, Settings, MessageCircle } from "lucide-react";
 import ListingCard, { ListingProps } from "@/components/ListingCard";
+import { Link } from "react-router-dom";
 
 // Mock user data
 const mockUserData = {
@@ -196,8 +196,8 @@ const Profile = () => {
           
           {isOwnProfile && (
             <div className="mt-8 text-center">
-              <Button as="a" href="/create-listing">
-                + Add New Listing
+              <Button asChild>
+                <Link to="/create-listing">+ Add New Listing</Link>
               </Button>
             </div>
           )}
