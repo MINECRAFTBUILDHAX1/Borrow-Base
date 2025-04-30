@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Filter, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger,
+  SheetFooter
+} from "@/components/ui/sheet";
 import ListingCard, { ListingProps } from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
 
@@ -178,12 +186,19 @@ const Explore = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>("recommended");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [location, setLocation] = useState<string>("New York, NY");
+  const [priceMin, setPriceMin] = useState<number | undefined>(undefined);
+  const [priceMax, setPriceMax] = useState<number | undefined>(undefined);
   
   // Filter listings based on category and search query
   const filteredListings = mockListings.filter(listing => {
-    const matchesCategory = !selectedCategory || listing.category.toLowerCase() === selectedCategory;
+    const matchesCategory = !selectedCategory || listing.category.toLowerCase() === selectedCategory.toLowerCase();
     const matchesSearch = !searchQuery || listing.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesPrice = 
+      (!priceMin || listing.price >= priceMin) && 
+      (!priceMax || listing.price <= priceMax);
+    
+    return matchesCategory && matchesSearch && matchesPrice;
   });
   
   // Sort listings based on selected option
@@ -205,6 +220,16 @@ const Explore = () => {
   const handleSelectCategory = (categoryId: string | null) => {
     setSelectedCategory(categoryId);
   };
+
+  const handleSearch = () => {
+    // In a real app, this would trigger an API call with the search parameters
+    console.log("Searching for:", { searchQuery, location, selectedCategory });
+  };
+  
+  const applyFilters = (min?: number, max?: number) => {
+    setPriceMin(min);
+    setPriceMax(max);
+  };
   
   return (
     <div>
@@ -219,6 +244,7 @@ const Explore = () => {
                 placeholder="Search for items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
             <div className="relative flex-grow md:max-w-[180px]">
@@ -226,14 +252,48 @@ const Explore = () => {
               <Input 
                 className="pl-10 h-12" 
                 placeholder="Location"
-                defaultValue="New York, NY"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
               />
             </div>
             <div className="flex-shrink-0">
-              <Button variant="outline" size="icon" className="h-12 w-12">
-                <Filter className="h-5 w-5" />
-                <span className="sr-only">Filter</span>
-              </Button>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-12 w-12">
+                    <Filter className="h-5 w-5" />
+                    <span className="sr-only">Filter</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Filter Options</SheetTitle>
+                    <SheetDescription>
+                      Refine your search results
+                    </SheetDescription>
+                  </SheetHeader>
+                  
+                  <div className="py-6">
+                    <h3 className="font-medium mb-2">Price Range</h3>
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        placeholder="Min" 
+                        type="number" 
+                        onChange={(e) => setPriceMin(e.target.value ? Number(e.target.value) : undefined)}
+                      />
+                      <span>to</span>
+                      <Input 
+                        placeholder="Max" 
+                        type="number"
+                        onChange={(e) => setPriceMax(e.target.value ? Number(e.target.value) : undefined)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <SheetFooter>
+                    <Button onClick={() => applyFilters(priceMin, priceMax)}>Apply Filters</Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>

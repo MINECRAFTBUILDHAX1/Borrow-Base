@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { SearchIcon, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ const categories = [
 ];
 
 // Mock featured listings data
-const featuredListings: ListingProps[] = [
+const allFeaturedListings: ListingProps[] = [
   {
     id: "1",
     title: "Professional DSLR Camera",
@@ -73,7 +73,7 @@ const featuredListings: ListingProps[] = [
 ];
 
 // Mock nearby listings data
-const nearbyListings: ListingProps[] = [
+const allNearbyListings: ListingProps[] = [
   {
     id: "5",
     title: "Projector for Home Cinema",
@@ -126,10 +126,30 @@ const nearbyListings: ListingProps[] = [
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [featuredListings, setFeaturedListings] = useState<ListingProps[]>(allFeaturedListings);
+  const [nearbyListings, setNearbyListings] = useState<ListingProps[]>(allNearbyListings);
   
   const handleSelectCategory = (categoryId: string | null) => {
     setSelectedCategory(categoryId);
   };
+  
+  // Filter listings based on selected category
+  useEffect(() => {
+    if (selectedCategory === null) {
+      setFeaturedListings(allFeaturedListings);
+      setNearbyListings(allNearbyListings);
+    } else {
+      const filteredFeatured = allFeaturedListings.filter(listing => 
+        listing.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+      const filteredNearby = allNearbyListings.filter(listing => 
+        listing.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+      
+      setFeaturedListings(filteredFeatured);
+      setNearbyListings(filteredNearby);
+    }
+  }, [selectedCategory]);
   
   return (
     <div className="flex flex-col">
@@ -161,7 +181,7 @@ const Index = () => {
                   placeholder="Location"
                 />
               </div>
-              <Button size="lg" className="h-12">
+              <Button size="lg" className="h-12" onClick={() => window.location.href = '/explore'}>
                 Search
               </Button>
             </div>
@@ -182,16 +202,29 @@ const Index = () => {
       <section className="py-12 px-4">
         <div className="container mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Featured Items</h2>
+            <h2 className="text-2xl font-bold">
+              {selectedCategory ? `Featured ${selectedCategory}` : "Featured Items"}
+              {featuredListings.length === 0 && selectedCategory && (
+                <span className="text-sm font-normal ml-2 text-gray-500">
+                  (No items found)
+                </span>
+              )}
+            </h2>
             <Link to="/explore" className="text-brand-purple hover:underline">
               View all
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredListings.map(listing => (
-              <ListingCard key={listing.id} {...listing} />
-            ))}
-          </div>
+          {featuredListings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredListings.map(listing => (
+                <ListingCard key={listing.id} {...listing} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No featured items found in this category.
+            </div>
+          )}
         </div>
       </section>
       
@@ -199,16 +232,29 @@ const Index = () => {
       <section className="py-12 px-4 bg-gray-50">
         <div className="container mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Near You</h2>
+            <h2 className="text-2xl font-bold">
+              {selectedCategory ? `${selectedCategory} Near You` : "Near You"}
+              {nearbyListings.length === 0 && selectedCategory && (
+                <span className="text-sm font-normal ml-2 text-gray-500">
+                  (No items found)
+                </span>
+              )}
+            </h2>
             <Link to="/explore" className="text-brand-purple hover:underline">
               View all
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {nearbyListings.map(listing => (
-              <ListingCard key={listing.id} {...listing} />
-            ))}
-          </div>
+          {nearbyListings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {nearbyListings.map(listing => (
+                <ListingCard key={listing.id} {...listing} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No nearby items found in this category.
+            </div>
+          )}
         </div>
       </section>
       
@@ -239,7 +285,7 @@ const Index = () => {
               <p className="text-gray-600">Meet the owner, pick up the item, and return it when you're done.</p>
             </div>
           </div>
-          <Button className="mt-12" size="lg">
+          <Button className="mt-12" size="lg" onClick={() => window.location.href = '/explore'}>
             Start Borrowing
           </Button>
         </div>

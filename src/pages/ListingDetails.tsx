@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Calendar, ChevronLeft, MapPin, Star, Clock, ShieldCheck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,82 +14,208 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock listing data (would be fetched from API in real app)
-const mockListing = {
-  id: "1",
-  title: "Professional DSLR Camera",
-  description: "High-quality Canon 5D Mark IV DSLR camera with 24-70mm lens. Perfect for professional photography, events, or just trying out a professional camera. Includes carrying case, extra battery, memory card, and tripod.",
-  price: 35,
-  priceUnit: "day",
-  deposit: 200,
-  images: [
-    "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8Y2FtZXJhfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-    "https://images.unsplash.com/photo-1580707221190-bd94d9087b7f?ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8Y2FtZXJhfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-    "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8Y2FtZXJhfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-  ],
-  location: "Brooklyn, NY",
-  distance: "1.2 km away",
-  features: ["24-70mm lens", "Extra battery", "Carrying case", "64GB memory card", "Tripod"],
-  rules: ["Valid ID required", "Security deposit required", "Return in original condition", "No international travel"],
-  owner: {
-    id: "user123",
-    name: "Michael Chen",
-    image: "https://randomuser.me/api/portraits/men/32.jpg",
-    rating: 4.9,
-    reviewCount: 42,
-    responseTime: "Within an hour",
-    memberSince: "June 2022"
+// Mock listing data collection (would be fetched from API in real app)
+const mockListings = {
+  "1": {
+    id: "1",
+    title: "Professional DSLR Camera",
+    description: "High-quality Canon 5D Mark IV DSLR camera with 24-70mm lens. Perfect for professional photography, events, or just trying out a professional camera. Includes carrying case, extra battery, memory card, and tripod.",
+    price: 35,
+    priceUnit: "day",
+    deposit: 200,
+    images: [
+      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8Y2FtZXJhfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
+      "https://images.unsplash.com/photo-1580707221190-bd94d9087b7f?ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8Y2FtZXJhfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
+      "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8Y2FtZXJhfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
+    ],
+    location: "Brooklyn, NY",
+    distance: "1.2 km away",
+    features: ["24-70mm lens", "Extra battery", "Carrying case", "64GB memory card", "Tripod"],
+    rules: ["Valid ID required", "Security deposit required", "Return in original condition", "No international travel"],
+    owner: {
+      id: "user123",
+      name: "Michael Chen",
+      image: "https://randomuser.me/api/portraits/men/32.jpg",
+      rating: 4.9,
+      reviewCount: 42,
+      responseTime: "Within an hour",
+      memberSince: "June 2022"
+    },
+    reviews: [
+      {
+        id: "rev1",
+        user: {
+          name: "Sarah Johnson",
+          image: "https://randomuser.me/api/portraits/women/44.jpg",
+        },
+        rating: 5,
+        date: "August 2023",
+        comment: "The camera was in perfect condition and Michael was very helpful explaining all the features. Would definitely rent again!"
+      },
+      {
+        id: "rev2",
+        user: {
+          name: "David Wilson",
+          image: "https://randomuser.me/api/portraits/men/67.jpg",
+        },
+        rating: 5,
+        date: "July 2023",
+        comment: "Great experience! The camera performed flawlessly for our event."
+      },
+      {
+        id: "rev3",
+        user: {
+          name: "Lisa Brooks",
+          image: "https://randomuser.me/api/portraits/women/17.jpg",
+        },
+        rating: 4,
+        date: "June 2023",
+        comment: "Camera was as described. Pick up and drop off was easy and convenient."
+      }
+    ],
+    availability: [
+      // Available dates would go here
+    ]
   },
-  reviews: [
-    {
-      id: "rev1",
-      user: {
-        name: "Sarah Johnson",
-        image: "https://randomuser.me/api/portraits/women/44.jpg",
-      },
-      rating: 5,
-      date: "August 2023",
-      comment: "The camera was in perfect condition and Michael was very helpful explaining all the features. Would definitely rent again!"
+  "2": {
+    id: "2",
+    title: "Mountain Bike",
+    description: "High-performance mountain bike, perfect for weekend trails or daily commutes. Features 21-speed gear system, front suspension, and all-terrain tires. Recently serviced and in excellent condition.",
+    price: 25,
+    priceUnit: "day",
+    deposit: 150,
+    images: [
+      "https://images.unsplash.com/photo-1485965120184-e220f721d03e?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8YmljeWNsZXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&w=1000&q=80",
+      "https://images.unsplash.com/photo-1571068316344-75bc76f77890?ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8YmljeWNsZXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&w=1000&q=80",
+      "https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8YmljeWNsZXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&w=1000&q=80",
+    ],
+    location: "Queens, NY",
+    distance: "2.5 km away",
+    features: ["21-speed gears", "Front suspension", "All-terrain tires", "Helmet included", "Lock included"],
+    rules: ["Valid ID required", "Security deposit required", "Return clean and dry", "Report any damage"],
+    owner: {
+      id: "user456",
+      name: "Emma Davis",
+      image: "https://randomuser.me/api/portraits/women/22.jpg",
+      rating: 4.8,
+      reviewCount: 28,
+      responseTime: "Within a few hours",
+      memberSince: "March 2023"
     },
-    {
-      id: "rev2",
-      user: {
-        name: "David Wilson",
-        image: "https://randomuser.me/api/portraits/men/67.jpg",
+    reviews: [
+      {
+        id: "rev4",
+        user: {
+          name: "James Brown",
+          image: "https://randomuser.me/api/portraits/men/22.jpg",
+        },
+        rating: 5,
+        date: "September 2023",
+        comment: "Great bike in excellent condition. Emma was very helpful and responsive."
       },
-      rating: 5,
-      date: "July 2023",
-      comment: "Great experience! The camera performed flawlessly for our event."
+      {
+        id: "rev5",
+        user: {
+          name: "Olivia Martin",
+          image: "https://randomuser.me/api/portraits/women/32.jpg",
+        },
+        rating: 4,
+        date: "August 2023",
+        comment: "Bike was perfect for my weekend trip. Will rent again!"
+      }
+    ],
+    availability: []
+  },
+  "3": {
+    id: "3",
+    title: "Premium Power Drill Set",
+    description: "Professional-grade power drill set with multiple drill bits, perfect for home improvement projects. Includes rechargeable battery, charger, and carrying case.",
+    price: 15,
+    priceUnit: "day",
+    deposit: 100,
+    images: [
+      "https://images.unsplash.com/photo-1504148455328-c376907d081c?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8ZHJpbGx8ZW58MHx8MHx8&ixlib=rb-1.2.1&w=1000&q=80",
+      "https://images.unsplash.com/photo-1623721675403-7cf4c03f6c16?ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8ZHJpbGx8ZW58MHx8MHx8&ixlib=rb-1.2.1&w=1000&q=80",
+      "https://images.unsplash.com/photo-1575908673626-a8bae0953d09?ixid=MnwxMjA3fDB8MHxzZWFyY2h8Nnx8ZHJpbGx8ZW58MHx8MHx8&ixlib=rb-1.2.1&w=1000&q=80",
+    ],
+    location: "Manhattan, NY",
+    distance: "0.8 km away",
+    features: ["18V cordless", "Multiple drill bits", "Rechargeable battery", "Carrying case", "Extended warranty"],
+    rules: ["Experience required", "Security deposit required", "Return in original condition", "No commercial use"],
+    owner: {
+      id: "user789",
+      name: "Daniel Smith",
+      image: "https://randomuser.me/api/portraits/men/41.jpg",
+      rating: 4.7,
+      reviewCount: 35,
+      responseTime: "Usually responds within a day",
+      memberSince: "January 2022"
     },
-    {
-      id: "rev3",
-      user: {
-        name: "Lisa Brooks",
-        image: "https://randomuser.me/api/portraits/women/17.jpg",
+    reviews: [
+      {
+        id: "rev6",
+        user: {
+          name: "Sophia Chen",
+          image: "https://randomuser.me/api/portraits/women/12.jpg",
+        },
+        rating: 5,
+        date: "October 2023",
+        comment: "The drill set was perfect for my weekend project. Daniel was very helpful with instructions."
       },
-      rating: 4,
-      date: "June 2023",
-      comment: "Camera was as described. Pick up and drop off was easy and convenient."
-    }
-  ],
-  availability: [
-    // Available dates would go here
-  ]
+      {
+        id: "rev7",
+        user: {
+          name: "William Jones",
+          image: "https://randomuser.me/api/portraits/men/34.jpg",
+        },
+        rating: 4,
+        date: "September 2023",
+        comment: "Good quality drill, did exactly what I needed it to do."
+      }
+    ],
+    availability: []
+  }
 };
 
 const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
-  // In a real app, you would fetch the listing data based on the ID
-  const listing = mockListing;
+  // Get the specific listing data based on ID
+  const listing = id ? mockListings[id as keyof typeof mockListings] : null;
   
+  const handleBookNow = () => {
+    toast({
+      title: "Booking initiated",
+      description: "This feature is coming soon. Thanks for your interest!",
+    });
+  };
+  
+  const handleContactOwner = () => {
+    toast({
+      title: "Message sent",
+      description: "The owner will respond to your inquiry soon.",
+    });
+  };
+  
+  const handleViewAllReviews = () => {
+    toast({
+      description: "All reviews will be shown in a future update.",
+    });
+  };
+  
+  // If listing not found, show appropriate message
   if (!listing) {
     return (
       <div className="container mx-auto py-12 px-4 text-center">
-        <p>Loading...</p>
+        <h2 className="text-2xl font-semibold mb-4">Listing Not Found</h2>
+        <p className="mb-6">The item you're looking for doesn't exist or has been removed.</p>
+        <Button onClick={() => navigate('/explore')}>Browse All Listings</Button>
       </div>
     );
   }
@@ -237,7 +363,7 @@ const ListingDetails = () => {
                 </Card>
               ))}
               
-              <Button variant="outline" className="w-full">View all reviews</Button>
+              <Button variant="outline" className="w-full" onClick={handleViewAllReviews}>View all reviews</Button>
             </div>
           </div>
         </div>
@@ -274,8 +400,8 @@ const ListingDetails = () => {
                   </div>
                 </div>
                 
-                <Button className="w-full mb-3">Book Now</Button>
-                <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+                <Button className="w-full mb-3" onClick={handleBookNow}>Book Now</Button>
+                <Button variant="outline" className="w-full flex items-center justify-center gap-2" onClick={handleContactOwner}>
                   <MessageCircle className="h-4 w-4" />
                   Contact Owner
                 </Button>
