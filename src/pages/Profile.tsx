@@ -1,13 +1,11 @@
+
 import { useParams } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Settings, MessageCircle } from "lucide-react";
-import ListingCard, { ListingProps } from "@/components/ListingCard";
-import { Link } from "react-router-dom";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileTabs from "@/components/profile/ProfileTabs";
+import { UserData } from "@/types/user";
 
 // Mock user data
-const mockUserData = {
+const mockUserData: UserData = {
   id: "user123",
   name: "Michael Chen",
   image: "https://randomuser.me/api/portraits/men/32.jpg",
@@ -127,130 +125,8 @@ const Profile = () => {
   
   return (
     <div className="container mx-auto py-8 px-4">
-      {/* Profile Header */}
-      <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
-        <Avatar className="h-20 w-20 md:h-32 md:w-32">
-          <AvatarImage src={userData.image} alt={userData.name} />
-          <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
-        </Avatar>
-        
-        <div className="flex-1">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-1">{userData.name}</h1>
-              <div className="flex items-center text-gray-600 mb-2">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                <span>{userData.rating}</span>
-                <span className="ml-1">({userData.reviewCount} reviews)</span>
-                {userData.verified && (
-                  <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
-                    Verified
-                  </span>
-                )}
-              </div>
-              <p className="text-gray-600 text-sm">Member since {userData.memberSince} • {userData.location}</p>
-            </div>
-            
-            {isOwnProfile ? (
-              <Button variant="outline" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Edit Profile
-              </Button>
-            ) : (
-              <Button className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                Message
-              </Button>
-            )}
-          </div>
-          
-          {userData.bio && (
-            <div className="mt-4">
-              <h2 className="font-medium mb-1">About</h2>
-              <p className="text-gray-700">{userData.bio}</p>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Tabs */}
-      <Tabs defaultValue="listings" className="mt-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-md mb-6">
-          <TabsTrigger value="listings">Listings</TabsTrigger>
-          <TabsTrigger value="rentals">Rentals</TabsTrigger>
-          <TabsTrigger value="reviews">Reviews</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="listings">
-          <h2 className="text-xl font-semibold mb-4">
-            {userData.listings.length > 0 
-              ? `${userData.name}'s Items (${userData.listings.length})`
-              : "No items listed yet"}
-          </h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {userData.listings.map((listing: ListingProps) => (
-              <ListingCard key={listing.id} {...listing} />
-            ))}
-          </div>
-          
-          {isOwnProfile && (
-            <div className="mt-8 text-center">
-              <Button asChild>
-                <Link to="/create-listing">+ Add New Listing</Link>
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="rentals">
-          <h2 className="text-xl font-semibold mb-4">
-            {userData.rentals.length > 0 
-              ? `Rental History (${userData.rentals.length})`
-              : "No rental history yet"}
-          </h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {userData.rentals.map((rental: ListingProps) => (
-              <ListingCard key={rental.id} {...rental} />
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="reviews">
-          <h2 className="text-xl font-semibold mb-4">
-            {userData.reviews.length > 0 
-              ? `Reviews (${userData.reviews.length})`
-              : "No reviews yet"}
-          </h2>
-          
-          <div className="space-y-6">
-            {userData.reviews.map((review) => (
-              <div key={review.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={review.user.image} alt={review.user.name} />
-                    <AvatarFallback>{review.user.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{review.user.name}</div>
-                    <div className="text-sm text-gray-500">{review.date}</div>
-                  </div>
-                </div>
-                <div className="flex mb-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
-                    />
-                  ))}
-                </div>
-                <p className="text-gray-700">{review.comment}</p>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+      <ProfileHeader userData={userData} isOwnProfile={isOwnProfile} />
+      <ProfileTabs userData={userData} isOwnProfile={isOwnProfile} />
     </div>
   );
 };
