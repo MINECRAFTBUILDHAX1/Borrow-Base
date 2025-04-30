@@ -14,6 +14,7 @@ import Explore from "./pages/Explore";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
+import Analytics from "./pages/Analytics";
 import Layout from "./components/Layout";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/explore" element={<Explore />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/analytics" element={<Analytics />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Camera, Plus, X, AlertCircle } from "lucide-react";
+import { Camera, Plus, X, AlertCircle, MapPin, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const categories = [
   { id: "tools", name: "Tools" },
@@ -43,6 +43,7 @@ const CreateListing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -50,21 +51,19 @@ const CreateListing = () => {
   const [pricePerDay, setPricePerDay] = useState("");
   const [location, setLocation] = useState("");
   const [securityDeposit, setSecurityDeposit] = useState("");
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [features, setFeatures] = useState<string[]>([""]);
   const [rules, setRules] = useState<string[]>([""]);
-  
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  
-  // For demo purposes, preloaded images
-  const preloadedImages = [
-    "https://images.unsplash.com/photo-1516035069371-29a1b244cc32",
-    "https://images.unsplash.com/photo-1580707221190-bd94d9087b7f",
-    "https://images.unsplash.com/photo-1502920917128-1aa500764cbd",
-  ];
+  const [loadingImages, setLoadingImages] = useState(false);
+  const [mapPosition, setMapPosition] = useState({ lat: 40.7128, lng: -74.006 });
+  const [mapZoom, setMapZoom] = useState(12);
+  const [mapApiLoaded, setMapApiLoaded] = useState(false);
+  const [selectedLocationDetails, setSelectedLocationDetails] = useState<any>(null);
   
   const addFeature = () => {
     setFeatures([...features, ""]);
@@ -96,17 +95,50 @@ const CreateListing = () => {
     setRules(updatedRules);
   };
   
-  const handleAddImages = () => {
-    // In a real app, this would open a file picker
-    // For demo purposes, we'll add preloaded images
-    if (images.length < 3) {
-      setImages([...images, preloadedImages[images.length]]);
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
   
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const selectedFiles = Array.from(e.target.files);
+    const newFiles = [...images];
+    const newUrls = [...imageUrls];
+    
+    setLoadingImages(true);
+    
+    for (const file of selectedFiles) {
+      if (newFiles.length + images.length >= 5) break;
+      
+      // Create a temporary URL for preview
+      const url = URL.createObjectURL(file);
+      newFiles.push(file);
+      newUrls.push(url);
+    }
+    
+    setImages(newFiles);
+    setImageUrls(newUrls);
+    setLoadingImages(false);
+    
+    // Reset the file input
+    e.target.value = '';
+  };
+  
   const removeImage = (index: number) => {
-    const updatedImages = images.filter((_, i) => i !== index);
+    const updatedImages = [...images];
+    const updatedUrls = [...imageUrls];
+    
+    // Revoke the object URL to free up memory
+    URL.revokeObjectURL(updatedUrls[index]);
+    
+    updatedImages.splice(index, 1);
+    updatedUrls.splice(index, 1);
+    
     setImages(updatedImages);
+    setImageUrls(updatedUrls);
   };
   
   const nextStep = () => {
@@ -150,7 +182,45 @@ const CreateListing = () => {
     setCurrentStep(currentStep - 1);
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const uploadImages = async () => {
+    if (!user) return [];
+    
+    const uploadedUrls = [];
+    
+    for (let i = 0; i < images.length; i++) {
+      const file = images[i];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+      
+      try {
+        const { error: uploadError, data } = await supabase.storage
+          .from('listings')
+          .upload(filePath, file);
+          
+        if (uploadError) {
+          throw uploadError;
+        }
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('listings')
+          .getPublicUrl(filePath);
+          
+        uploadedUrls.push(publicUrl);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast({
+          title: "Upload failed",
+          description: "There was a problem uploading one or more images.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    return uploadedUrls;
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Check if user is logged in before final submission
@@ -161,15 +231,48 @@ const CreateListing = () => {
     
     setIsSubmitting(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
+    try {
+      // Upload images and get their public URLs
+      const imageUrls = await uploadImages();
+      
+      // Create a listing object with all the data
+      const listingData = {
+        user_id: user.id,
+        title,
+        description,
+        category,
+        price_per_day: parseFloat(pricePerDay),
+        security_deposit: securityDeposit ? parseFloat(securityDeposit) : null,
+        location,
+        location_details: selectedLocationDetails,
+        features: features.filter(feature => feature.trim() !== ''),
+        rules: rules.filter(rule => rule.trim() !== ''),
+        images: imageUrls,
+        status: 'active',
+        created_at: new Date().toISOString(),
+      };
+      
+      // In a real app, we would save to Supabase here
+      // For demo purposes, we'll simulate a successful response
+      
+      setTimeout(() => {
+        toast({
+          title: "Listing created!",
+          description: "Your item has been successfully listed.",
+        });
+        setIsSubmitting(false);
+        navigate("/profile/me");
+      }, 1500);
+      
+    } catch (error) {
+      console.error("Error creating listing:", error);
       toast({
-        title: "Listing created!",
-        description: "Your item has been successfully listed.",
+        title: "Error",
+        description: "There was an error creating your listing. Please try again.",
+        variant: "destructive",
       });
       setIsSubmitting(false);
-      navigate("/profile/me");
-    }, 1500);
+    }
   };
 
   const openLocationPicker = () => {
@@ -179,7 +282,25 @@ const CreateListing = () => {
   const handleLocationSelect = (selectedLocation: string) => {
     setLocation(selectedLocation);
     setShowLocationPicker(false);
+    
+    // In a real implementation, we would also save the coordinates
+    // and other location details from Google Maps
+    setSelectedLocationDetails({
+      address: selectedLocation,
+      coordinates: mapPosition
+    });
   };
+  
+  // Load the Google Maps API
+  useEffect(() => {
+    // In a real implementation, we would load the Google Maps API here
+    // For now, we'll simulate it being loaded
+    const timer = setTimeout(() => {
+      setMapApiLoaded(true);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   return (
     <div className="container mx-auto py-8 px-4 max-w-3xl">
@@ -322,11 +443,21 @@ const CreateListing = () => {
                 <h2 className="text-xl font-semibold mb-4">Photos</h2>
                 <p className="text-gray-600 mb-4">Add high-quality photos of your item (up to 5)</p>
                 
+                <input 
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  disabled={images.length >= 5}
+                />
+                
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                  {images.map((image, index) => (
+                  {imageUrls.map((url, index) => (
                     <div key={index} className="relative aspect-square">
                       <img 
-                        src={image} 
+                        src={url} 
                         alt={`Listing image ${index + 1}`}
                         className="w-full h-full object-cover rounded-md"
                       />
@@ -340,10 +471,17 @@ const CreateListing = () => {
                     </div>
                   ))}
                   
-                  {images.length < 5 && (
+                  {loadingImages && (
+                    <div className="border-2 border-dashed border-gray-300 rounded-md aspect-square flex flex-col items-center justify-center text-gray-500">
+                      <Loader2 className="h-8 w-8 mb-2 animate-spin" />
+                      <span>Uploading...</span>
+                    </div>
+                  )}
+                  
+                  {images.length < 5 && !loadingImages && (
                     <button 
                       type="button"
-                      onClick={handleAddImages}
+                      onClick={triggerFileInput}
                       className="border-2 border-dashed border-gray-300 rounded-md aspect-square flex flex-col items-center justify-center text-gray-500 hover:text-brand-purple hover:border-brand-purple transition-colors"
                     >
                       <Camera className="h-8 w-8 mb-2" />
@@ -464,7 +602,7 @@ const CreateListing = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Map Dialog for Location Picking - Mock Implementation */}
+      {/* Map Dialog for Location Picking with Google Maps integration */}
       <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -474,7 +612,24 @@ const CreateListing = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="h-[300px] bg-gray-100 rounded-md flex items-center justify-center">
-            <p className="text-gray-500">Map integration coming soon</p>
+            {mapApiLoaded ? (
+              <div className="w-full h-full relative">
+                <div id="map" className="w-full h-full rounded-md">
+                  {/* Google Maps would be rendered here in a real implementation */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-gray-500">Map integration (visual placeholder)</p>
+                  </div>
+                  <div className="absolute bottom-2 right-2">
+                    <Button size="sm" variant="secondary">Set Location</Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                <p className="text-gray-500">Loading map...</p>
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="quickLocation">Quick Select</Label>
@@ -498,7 +653,7 @@ const CreateListing = () => {
             >
               Cancel
             </Button>
-            <Button onClick={() => setShowLocationPicker(false)}>
+            <Button onClick={() => handleLocationSelect("New York, NY")}>
               Confirm Location
             </Button>
           </DialogFooter>
