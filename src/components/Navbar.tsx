@@ -1,12 +1,39 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, User } from "lucide-react";
+import { Search, User, LogOut, Settings, UserCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BorrowBaseLogo from "./BorrowBaseLogo";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const isMobile = useIsMobile();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  const getUserInitials = () => {
+    if (!user) return "?";
+    const fullName = user.user_metadata?.full_name || "";
+    if (!fullName) return user.email?.substring(0, 1).toUpperCase() || "?";
+    
+    const nameParts = fullName.split(" ");
+    if (nameParts.length > 1) {
+      return `${nameParts[0].charAt(0)}${nameParts[nameParts.length - 1].charAt(0)}`.toUpperCase();
+    }
+    return fullName.substring(0, 1).toUpperCase();
+  };
 
   if (isMobile) {
     return (
@@ -51,8 +78,49 @@ const Navbar = () => {
                 placeholder="Search for items..."
               />
             </div>
-            <Button variant="outline">Log in</Button>
-            <Button>Sign up</Button>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar>
+                      <AvatarImage src={user.user_metadata?.avatar_url} />
+                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <Link to="/profile/me">
+                    <DropdownMenuItem>
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link to="/settings">
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="outline">Log in</Button>
+                </Link>
+                <Link to="/auth?tab=register">
+                  <Button>Sign up</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

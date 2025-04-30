@@ -19,7 +19,7 @@ const CategoryFilter = ({ categories, onSelectCategory, selectedCategory }: Cate
   return (
     <div className="py-4">
       <ScrollArea className="pb-4">
-        <div className="flex gap-4 px-4 pb-2">
+        <div className="flex gap-4 px-4 pb-2 justify-center">
           <div 
             className={cn(
               "flex flex-col items-center gap-1 cursor-pointer min-w-[60px]",

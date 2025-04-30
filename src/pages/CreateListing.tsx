@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,8 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Camera, Plus, X } from "lucide-react";
+import { Camera, Plus, X, AlertCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { MapPin } from "lucide-react";
 
 const categories = [
   { id: "tools", name: "Tools" },
@@ -32,6 +42,7 @@ const categories = [
 const CreateListing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -45,6 +56,8 @@ const CreateListing = () => {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   
   // For demo purposes, preloaded images
   const preloadedImages = [
@@ -139,6 +152,13 @@ const CreateListing = () => {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user is logged in before final submission
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
+    
     setIsSubmitting(true);
     
     // Simulate API call with timeout
@@ -150,6 +170,15 @@ const CreateListing = () => {
       setIsSubmitting(false);
       navigate("/profile/me");
     }, 1500);
+  };
+
+  const openLocationPicker = () => {
+    setShowLocationPicker(true);
+  };
+
+  const handleLocationSelect = (selectedLocation: string) => {
+    setLocation(selectedLocation);
+    setShowLocationPicker(false);
   };
   
   return (
@@ -269,13 +298,20 @@ const CreateListing = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="location">Location *</Label>
-                  <Input 
-                    id="location" 
-                    placeholder="Enter your city or neighborhood" 
-                    value={location} 
-                    onChange={e => setLocation(e.target.value)} 
-                    required 
-                  />
+                  <div className="flex gap-2">
+                    <Input 
+                      id="location" 
+                      placeholder="Enter your city or neighborhood" 
+                      value={location} 
+                      onChange={e => setLocation(e.target.value)} 
+                      required 
+                      className="flex-1"
+                    />
+                    <Button type="button" variant="outline" onClick={openLocationPicker}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Map
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -404,6 +440,70 @@ const CreateListing = () => {
           </form>
         </CardContent>
       </Card>
+
+      {/* Auth Dialog */}
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign in required</DialogTitle>
+            <DialogDescription>
+              You need to be signed in to create a listing. Would you like to sign in or create an account?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-2">
+            <AlertCircle className="h-12 w-12 text-amber-500 mb-2" />
+          </div>
+          <DialogFooter className="gap-2 sm:justify-center">
+            <Button variant="outline" onClick={() => navigate("/auth")}>
+              Log In
+            </Button>
+            <Button onClick={() => navigate("/auth?tab=register")}>
+              Sign Up
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Map Dialog for Location Picking - Mock Implementation */}
+      <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Location</DialogTitle>
+            <DialogDescription>
+              Choose your location from the map
+            </DialogDescription>
+          </DialogHeader>
+          <div className="h-[300px] bg-gray-100 rounded-md flex items-center justify-center">
+            <p className="text-gray-500">Map integration coming soon</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quickLocation">Quick Select</Label>
+            <Select onValueChange={handleLocationSelect}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="New York, NY">New York, NY</SelectItem>
+                <SelectItem value="Brooklyn, NY">Brooklyn, NY</SelectItem>
+                <SelectItem value="Queens, NY">Queens, NY</SelectItem>
+                <SelectItem value="Manhattan, NY">Manhattan, NY</SelectItem>
+                <SelectItem value="Bronx, NY">Bronx, NY</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowLocationPicker(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={() => setShowLocationPicker(false)}>
+              Confirm Location
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
