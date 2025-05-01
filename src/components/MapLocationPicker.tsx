@@ -2,12 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { GOOGLE_MAPS_API_KEY } from "@/config/api-keys";
 
-interface MapLocationPickerProps {
-  onLocationSelect: (location: { address: string; lat: number; lng: number }) => void;
-  defaultLocation?: { lat: number; lng: number };
-}
-
+// Add Google Maps type declarations
 declare global {
   interface Window {
     google: any;
@@ -15,13 +12,16 @@ declare global {
   }
 }
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyCM6Ux_KougBeEYkxVQCArnIzA9cdgjYII";
+interface MapLocationPickerProps {
+  onLocationSelect: (location: { address: string; lat: number; lng: number }) => void;
+  defaultLocation?: { lat: number; lng: number };
+}
 
 const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128, lng: -74.006 } }: MapLocationPickerProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
+  const [map, setMap] = useState<any | null>(null);
+  const [marker, setMarker] = useState<any | null>(null);
   const [selectedPosition, setSelectedPosition] = useState(defaultLocation);
   const [address, setAddress] = useState("");
 
@@ -77,10 +77,10 @@ const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128,
     geocodePosition(defaultLocation);
 
     // Add click event listener to the map
-    mapInstance.addListener("click", (e: google.maps.MapMouseEvent) => {
+    mapInstance.addListener("click", (e: any) => {
       const newPosition = {
-        lat: e.latLng!.lat(),
-        lng: e.latLng!.lng(),
+        lat: e.latLng.lat(),
+        lng: e.latLng.lng(),
       };
       markerInstance.setPosition(newPosition);
       setSelectedPosition(newPosition);
@@ -90,8 +90,8 @@ const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128,
     // Add dragend event listener to the marker
     markerInstance.addListener("dragend", () => {
       const newPosition = {
-        lat: markerInstance.getPosition()!.lat(),
-        lng: markerInstance.getPosition()!.lng(),
+        lat: markerInstance.getPosition().lat(),
+        lng: markerInstance.getPosition().lng(),
       };
       setSelectedPosition(newPosition);
       geocodePosition(newPosition);
@@ -103,7 +103,7 @@ const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128,
     if (!window.google) return;
     
     const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ location: position }, (results: google.maps.GeocoderResult[], status: google.maps.GeocoderStatus) => {
+    geocoder.geocode({ location: position }, (results: any[], status: string) => {
       if (status === "OK" && results[0]) {
         setAddress(results[0].formatted_address);
       } else {

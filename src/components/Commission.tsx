@@ -2,16 +2,42 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 interface CommissionProps {
   variant?: "full" | "compact";
+  listingPrice?: number;
 }
 
-const Commission = ({ variant = "full" }: CommissionProps) => {
+const Commission = ({ variant = "full", listingPrice }: CommissionProps) => {
+  const [sellerEarnings, setSellerEarnings] = useState<number | null>(null);
+  const commissionRate = 0.15; // 15%
+
+  useEffect(() => {
+    if (listingPrice) {
+      const commission = listingPrice * commissionRate;
+      setSellerEarnings(listingPrice - commission);
+    }
+  }, [listingPrice]);
+
   if (variant === "compact") {
     return (
       <div className="bg-amber-50 p-3 rounded-md border border-amber-200">
         <p className="text-sm text-amber-800">BorrowBase charges a 15% service fee on all completed rentals.</p>
+        
+        {listingPrice && (
+          <div className="mt-2 pt-2 border-t border-amber-200">
+            <p className="text-xs text-amber-800">
+              <span className="font-medium">For this price (${listingPrice}/day):</span>
+            </p>
+            <p className="text-xs text-amber-700">
+              • You'll earn: ${sellerEarnings?.toFixed(2)}/day
+            </p>
+            <p className="text-xs text-amber-700">
+              • Service fee: ${(listingPrice * commissionRate).toFixed(2)}/day
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -25,6 +51,20 @@ const Commission = ({ variant = "full" }: CommissionProps) => {
         <div>
           <h4 className="font-medium text-sm mb-1">For Lenders</h4>
           <p className="text-xs text-amber-700">You receive 85% of the rental price directly to your account after the rental is completed.</p>
+          
+          {listingPrice && (
+            <div className="mt-2 p-2 bg-amber-100 rounded-md">
+              <p className="text-xs font-medium text-amber-800">
+                Example for ${listingPrice}/day:
+              </p>
+              <p className="text-xs text-amber-700">
+                • You'll earn: ${sellerEarnings?.toFixed(2)}/day
+              </p>
+              <p className="text-xs text-amber-700">
+                • Service fee: ${(listingPrice * commissionRate).toFixed(2)}/day
+              </p>
+            </div>
+          )}
         </div>
         
         <div>

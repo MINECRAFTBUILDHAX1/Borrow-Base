@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import Commission from "@/components/Commission";
+import MapLocationPicker from "@/components/MapLocationPicker";
 
 const categories = [
   { id: "tools", name: "Tools" },
@@ -60,9 +61,6 @@ const CreateListing = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [loadingImages, setLoadingImages] = useState(false);
-  const [mapPosition, setMapPosition] = useState({ lat: 40.7128, lng: -74.006 });
-  const [mapZoom, setMapZoom] = useState(12);
-  const [mapApiLoaded, setMapApiLoaded] = useState(false);
   const [selectedLocationDetails, setSelectedLocationDetails] = useState<any>(null);
   
   const addFeature = () => {
@@ -252,25 +250,29 @@ const CreateListing = () => {
         created_at: new Date().toISOString(),
       };
       
-      // In a real app, we would save to Supabase here
-      // For demo purposes, we'll simulate a successful response
+      // In a real implementation, save to Supabase
+      const { data, error } = await supabase
+        .from('listings')
+        .insert(listingData);
+        
+      if (error) {
+        throw error;
+      }
       
-      setTimeout(() => {
-        toast({
-          title: "Listing created!",
-          description: "Your item has been successfully listed.",
-        });
-        setIsSubmitting(false);
-        navigate("/profile/me");
-      }, 1500);
+      toast({
+        title: "Listing created!",
+        description: "Your item has been successfully listed.",
+      });
+      navigate("/profile/me");
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating listing:", error);
       toast({
         title: "Error",
-        description: "There was an error creating your listing. Please try again.",
+        description: error.message || "There was an error creating your listing. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -279,16 +281,10 @@ const CreateListing = () => {
     setShowLocationPicker(true);
   };
 
-  const handleLocationSelect = (selectedLocation: string) => {
-    setLocation(selectedLocation);
+  const handleLocationSelect = (selectedLocation: { address: string; lat: number; lng: number }) => {
+    setLocation(selectedLocation.address);
     setShowLocationPicker(false);
-    
-    // In a real implementation, we would also save the coordinates
-    // and other location details from Google Maps
-    setSelectedLocationDetails({
-      address: selectedLocation,
-      coordinates: mapPosition
-    });
+    setSelectedLocationDetails(selectedLocation);
   };
   
   // Load the Google Maps API
@@ -404,6 +400,13 @@ const CreateListing = () => {
                     onChange={e => setPricePerDay(e.target.value)} 
                     required 
                   />
+                  
+                  {/* Commission information */}
+                  {pricePerDay && parseFloat(pricePerDay) > 0 && (
+                    <div className="mt-2">
+                      <Commission variant="compact" listingPrice={parseFloat(pricePerDay)} />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -554,6 +557,11 @@ const CreateListing = () => {
                     </div>
                   ))}
                 </div>
+
+                {/* Full commission information */}
+                <div className="mt-6">
+                  <Commission listingPrice={pricePerDay ? parseFloat(pricePerDay) : undefined} />
+                </div>
               </div>
             )}
             
@@ -611,40 +619,8 @@ const CreateListing = () => {
               Choose your location from the map
             </DialogDescription>
           </DialogHeader>
-          <div className="h-[300px] bg-gray-100 rounded-md flex items-center justify-center">
-            {mapApiLoaded ? (
-              <div className="w-full h-full relative">
-                <div id="map" className="w-full h-full rounded-md">
-                  {/* Google Maps would be rendered here in a real implementation */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-gray-500">Map integration (visual placeholder)</p>
-                  </div>
-                  <div className="absolute bottom-2 right-2">
-                    <Button size="sm" variant="secondary">Set Location</Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                <p className="text-gray-500">Loading map...</p>
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="quickLocation">Quick Select</Label>
-            <Select onValueChange={handleLocationSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="New York, NY">New York, NY</SelectItem>
-                <SelectItem value="Brooklyn, NY">Brooklyn, NY</SelectItem>
-                <SelectItem value="Queens, NY">Queens, NY</SelectItem>
-                <SelectItem value="Manhattan, NY">Manhattan, NY</SelectItem>
-                <SelectItem value="Bronx, NY">Bronx, NY</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="h-[300px] bg-gray-100 rounded-md">
+            <MapLocationPicker onLocationSelect={handleLocationSelect} />
           </div>
           <DialogFooter>
             <Button 
@@ -652,9 +628,6 @@ const CreateListing = () => {
               onClick={() => setShowLocationPicker(false)}
             >
               Cancel
-            </Button>
-            <Button onClick={() => handleLocationSelect("New York, NY")}>
-              Confirm Location
             </Button>
           </DialogFooter>
         </DialogContent>

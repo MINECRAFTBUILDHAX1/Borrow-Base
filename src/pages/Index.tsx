@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { SearchIcon, MapPin } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { SearchIcon, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ListingCard, { ListingProps } from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock categories data
+// Categories data
 const categories = [
   { id: "tools", name: "Tools", icon: "🛠️" },
   { id: "electronics", name: "Electronics", icon: "📱" },
@@ -18,138 +19,132 @@ const categories = [
   { id: "books", name: "Books", icon: "📚" },
   { id: "kitchen", name: "Kitchen", icon: "🍳" },
   { id: "games", name: "Games", icon: "🎮" },
-];
-
-// Mock featured listings data
-const allFeaturedListings: ListingProps[] = [
-  {
-    id: "1",
-    title: "Professional DSLR Camera",
-    price: 35,
-    priceUnit: "day",
-    imageUrl: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8Y2FtZXJhfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-    location: "Brooklyn, NY",
-    rating: 4.9,
-    reviewCount: 23,
-    category: "Electronics",
-    distance: 1.2
-  },
-  {
-    id: "2",
-    title: "Mountain Bike",
-    price: 25,
-    priceUnit: "day",
-    imageUrl: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8YmljeWNsZXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&w=1000&q=80",
-    location: "Queens, NY",
-    rating: 4.7,
-    reviewCount: 18,
-    category: "Sports",
-    distance: 2.5
-  },
-  {
-    id: "3",
-    title: "Premium Power Drill Set",
-    price: 15,
-    priceUnit: "day",
-    imageUrl: "https://images.unsplash.com/photo-1504148455328-c376907d081c?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8ZHJpbGx8ZW58MHx8MHx8&ixlib=rb-1.2.1&w=1000&q=80",
-    location: "Manhattan, NY",
-    rating: 4.8,
-    reviewCount: 42,
-    category: "Tools",
-    distance: 0.8
-  },
-  {
-    id: "4",
-    title: "Camping Tent (4 Person)",
-    price: 30,
-    priceUnit: "day",
-    imageUrl: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8Y2FtcGluZyUyMHRlbnR8ZW58MHx8MHx8&ixlib=rb-1.2.1&w=1000&q=80",
-    location: "Bronx, NY",
-    rating: 4.6,
-    reviewCount: 31,
-    category: "Outdoor",
-    distance: 3.1
-  },
-];
-
-// Mock nearby listings data
-const allNearbyListings: ListingProps[] = [
-  {
-    id: "5",
-    title: "Projector for Home Cinema",
-    price: 20,
-    priceUnit: "day",
-    imageUrl: "https://images.unsplash.com/photo-1585504198199-20277a781a1d?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8cHJvamVjdG9yfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-    location: "Manhattan, NY",
-    rating: 4.5,
-    reviewCount: 12,
-    category: "Electronics",
-    distance: 0.5
-  },
-  {
-    id: "6",
-    title: "Electric Guitar",
-    price: 40,
-    priceUnit: "day",
-    imageUrl: "https://images.unsplash.com/photo-1564186763535-ebb21ef5277f?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8Z3VpdGFyfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-    location: "Brooklyn, NY",
-    rating: 4.9,
-    reviewCount: 8,
-    category: "Music",
-    distance: 1.7
-  },
-  {
-    id: "7",
-    title: "Portable Grill",
-    price: 15,
-    priceUnit: "day",
-    imageUrl: "https://images.unsplash.com/photo-1523897530436-6e6748f1bdd7?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8Z3JpbGx8ZW58MHx8MHx8&ixlib=rb-1.2.1&w=1000&q=80",
-    location: "Queens, NY",
-    rating: 4.6,
-    reviewCount: 15,
-    category: "Outdoor",
-    distance: 2.2
-  },
-  {
-    id: "8",
-    title: "Professional Lawn Mower",
-    price: 35,
-    priceUnit: "day",
-    imageUrl: "https://images.unsplash.com/photo-1589117668050-64a676875673?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8bGF3biUyMG1vd2VyfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-    location: "Staten Island, NY",
-    rating: 4.7,
-    reviewCount: 19,
-    category: "Tools",
-    distance: 4.5
-  },
+  { id: "music", name: "Music", icon: "🎸" },
 ];
 
 const Index = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [featuredListings, setFeaturedListings] = useState<ListingProps[]>(allFeaturedListings);
-  const [nearbyListings, setNearbyListings] = useState<ListingProps[]>(allNearbyListings);
+  const [featuredListings, setFeaturedListings] = useState<ListingProps[]>([]);
+  const [nearbyListings, setNearbyListings] = useState<ListingProps[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+  
+  // Fetch listings from Supabase
+  useEffect(() => {
+    const fetchListings = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Fetch all listings (in a real app, you'd limit this and add pagination)
+        const { data: allListings, error } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (allListings) {
+          // Format listings to match the ListingProps type
+          const formattedListings = allListings.map(listing => ({
+            id: listing.id,
+            title: listing.title,
+            price: listing.price_per_day || 0,
+            priceUnit: "day",
+            imageUrl: listing.images && listing.images.length > 0 
+              ? listing.images[0] 
+              : "https://via.placeholder.com/300x200?text=No+Image",
+            location: listing.location || "No location",
+            rating: listing.average_rating || 0,
+            reviewCount: listing.review_count || 0,
+            category: listing.category || "Other",
+            distance: 0 // Would be calculated in a real app
+          }));
+          
+          // For featured listings, just take the first 4 items
+          setFeaturedListings(formattedListings.slice(0, 4));
+          
+          // For nearby listings, take the next 4 items
+          // In a real app, you'd filter by actual location proximity
+          setNearbyListings(formattedListings.slice(4, 8));
+        }
+      } catch (error) {
+        console.error('Error fetching listings:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchListings();
+  }, []);
+  
+  // Filter listings based on selected category
+  useEffect(() => {
+    const fetchFilteredListings = async () => {
+      if (!selectedCategory) return;
+      
+      setIsLoading(true);
+      
+      try {
+        // Fetch listings filtered by category
+        const { data: filteredListings, error } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('status', 'active')
+          .eq('category', selectedCategory)
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (filteredListings) {
+          // Format listings to match the ListingProps type
+          const formattedListings = filteredListings.map(listing => ({
+            id: listing.id,
+            title: listing.title,
+            price: listing.price_per_day || 0,
+            priceUnit: "day",
+            imageUrl: listing.images && listing.images.length > 0 
+              ? listing.images[0] 
+              : "https://via.placeholder.com/300x200?text=No+Image",
+            location: listing.location || "No location",
+            rating: listing.average_rating || 0,
+            reviewCount: listing.review_count || 0,
+            category: listing.category || "Other",
+            distance: 0 // Would be calculated in a real app
+          }));
+          
+          // For featured listings, just take the first 4 items
+          setFeaturedListings(formattedListings.slice(0, 4));
+          
+          // For nearby listings, take the next 4 items
+          setNearbyListings(formattedListings.slice(4, 8));
+        }
+      } catch (error) {
+        console.error('Error fetching filtered listings:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (selectedCategory) {
+      fetchFilteredListings();
+    }
+  }, [selectedCategory]);
   
   const handleSelectCategory = (categoryId: string | null) => {
     setSelectedCategory(categoryId);
   };
   
-  // Filter listings based on selected category
-  useEffect(() => {
-    if (selectedCategory === null) {
-      setFeaturedListings(allFeaturedListings);
-      setNearbyListings(allNearbyListings);
-    } else {
-      const filteredFeatured = allFeaturedListings.filter(listing => 
-        listing.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
-      const filteredNearby = allNearbyListings.filter(listing => 
-        listing.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
-      
-      setFeaturedListings(filteredFeatured);
-      setNearbyListings(filteredNearby);
-    }
-  }, [selectedCategory]);
+  const handleSearch = () => {
+    // Navigate to explore page with search parameters
+    navigate(`/explore?search=${searchQuery}&location=${locationQuery}`);
+  };
   
   return (
     <div className="flex flex-col">
@@ -172,6 +167,9 @@ const Index = () => {
                 <Input 
                   className="pl-10 h-12 text-gray-800" 
                   placeholder="What do you want to borrow?"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 />
               </div>
               <div className="relative flex-grow">
@@ -179,9 +177,12 @@ const Index = () => {
                 <Input 
                   className="pl-10 h-12 text-gray-800" 
                   placeholder="Location"
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 />
               </div>
-              <Button size="lg" className="h-12" onClick={() => window.location.href = '/explore'}>
+              <Button size="lg" className="h-12" onClick={handleSearch}>
                 Search
               </Button>
             </div>
@@ -204,17 +205,17 @@ const Index = () => {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">
               {selectedCategory ? `Featured ${selectedCategory}` : "Featured Items"}
-              {featuredListings.length === 0 && selectedCategory && (
-                <span className="text-sm font-normal ml-2 text-gray-500">
-                  (No items found)
-                </span>
-              )}
             </h2>
             <Link to="/explore" className="text-brand-purple hover:underline">
               View all
             </Link>
           </div>
-          {featuredListings.length > 0 ? (
+          
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-brand-purple" />
+            </div>
+          ) : featuredListings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredListings.map(listing => (
                 <ListingCard key={listing.id} {...listing} />
@@ -222,7 +223,14 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              No featured items found in this category.
+              No featured items found {selectedCategory && `in ${selectedCategory}`}.
+              {!selectedCategory && (
+                <div className="mt-4">
+                  <Link to="/create-listing">
+                    <Button>Be the first to list an item</Button>
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -234,17 +242,17 @@ const Index = () => {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">
               {selectedCategory ? `${selectedCategory} Near You` : "Near You"}
-              {nearbyListings.length === 0 && selectedCategory && (
-                <span className="text-sm font-normal ml-2 text-gray-500">
-                  (No items found)
-                </span>
-              )}
             </h2>
             <Link to="/explore" className="text-brand-purple hover:underline">
               View all
             </Link>
           </div>
-          {nearbyListings.length > 0 ? (
+          
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-brand-purple" />
+            </div>
+          ) : nearbyListings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {nearbyListings.map(listing => (
                 <ListingCard key={listing.id} {...listing} />
@@ -252,7 +260,7 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              No nearby items found in this category.
+              No nearby items found {selectedCategory && `in ${selectedCategory}`}.
             </div>
           )}
         </div>
@@ -285,7 +293,7 @@ const Index = () => {
               <p className="text-gray-600">Meet the owner, pick up the item, and return it when you're done.</p>
             </div>
           </div>
-          <Button className="mt-12" size="lg" onClick={() => window.location.href = '/explore'}>
+          <Button className="mt-12" size="lg" onClick={() => navigate('/explore')}>
             Start Borrowing
           </Button>
         </div>

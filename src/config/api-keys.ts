@@ -7,3 +7,4 @@ export const STRIPE_PUBLISHABLE_KEY = "pk_live_51R8Ry1AucLOGbyP2hqtEyY9WTWIQP4Cj
 
 // NOTE: Your Stripe secret key should NEVER be stored here - it should only be used in server-side code
 // For secure API calls that require secret keys, use Supabase Edge Functions
+
