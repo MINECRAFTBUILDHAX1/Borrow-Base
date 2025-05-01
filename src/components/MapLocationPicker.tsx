@@ -8,61 +8,110 @@ interface MapLocationPickerProps {
   defaultLocation?: { lat: number; lng: number };
 }
 
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
+}
+
+const GOOGLE_MAPS_API_KEY = "AIzaSyCM6Ux_KougBeEYkxVQCArnIzA9cdgjYII";
+
 const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128, lng: -74.006 } }: MapLocationPickerProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mapInstance, setMapInstance] = useState<any>(null);
-  const [marker, setMarker] = useState<any>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
   const [selectedPosition, setSelectedPosition] = useState(defaultLocation);
   const [address, setAddress] = useState("");
 
-  // This would normally load the Google Maps API
+  // Load the Google Maps script
   useEffect(() => {
-    // In a real implementation, we'd load the Google Maps API here
-    // For demonstration purposes, we'll simulate the loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    // Check if Google Maps API is already loaded
+    if (window.google && window.google.maps) {
+      initMap();
+      return;
+    }
+
+    // Define the callback function for when the script loads
+    window.initMap = initMap;
+
+    // Create the script element and append it to the document
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+
+    // Cleanup
+    return () => {
+      window.initMap = () => {};
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
   }, []);
 
-  // For demo purposes only - in a real app, this would initialize the map
-  useEffect(() => {
-    if (!isLoading && mapRef.current) {
-      // In a real implementation, we'd initialize the map here
-      console.log("Map would be initialized with location:", defaultLocation);
-    }
-  }, [isLoading, defaultLocation]);
+  // Initialize the map
+  function initMap() {
+    if (!mapRef.current) return;
+    
+    const mapInstance = new window.google.maps.Map(mapRef.current, {
+      center: defaultLocation,
+      zoom: 12,
+      disableDefaultUI: true,
+      zoomControl: true,
+    });
 
-  const handleMapClick = (event: any) => {
-    // In a real implementation, we would:
-    // 1. Get the latitude and longitude from the map click event
-    // 2. Update the marker position
-    // 3. Get the address using reverse geocoding
-    // 4. Update the state
+    const markerInstance = new window.google.maps.Marker({
+      position: defaultLocation,
+      map: mapInstance,
+      draggable: true,
+    });
+
+    setMap(mapInstance);
+    setMarker(markerInstance);
+    setIsLoading(false);
+
+    // Get address for initial position
+    geocodePosition(defaultLocation);
+
+    // Add click event listener to the map
+    mapInstance.addListener("click", (e: google.maps.MapMouseEvent) => {
+      const newPosition = {
+        lat: e.latLng!.lat(),
+        lng: e.latLng!.lng(),
+      };
+      markerInstance.setPosition(newPosition);
+      setSelectedPosition(newPosition);
+      geocodePosition(newPosition);
+    });
+
+    // Add dragend event listener to the marker
+    markerInstance.addListener("dragend", () => {
+      const newPosition = {
+        lat: markerInstance.getPosition()!.lat(),
+        lng: markerInstance.getPosition()!.lng(),
+      };
+      setSelectedPosition(newPosition);
+      geocodePosition(newPosition);
+    });
+  }
+
+  // Geocode the position to get the address
+  const geocodePosition = (position: { lat: number; lng: number }) => {
+    if (!window.google) return;
     
-    // For demo purposes, we'll just simulate this
-    const randomOffset = (Math.random() - 0.5) * 0.01;
-    const newPosition = {
-      lat: selectedPosition.lat + randomOffset,
-      lng: selectedPosition.lng + randomOffset
-    };
-    
-    setSelectedPosition(newPosition);
-    
-    // Simulate geocoding
-    const addresses = [
-      "123 Main St, New York, NY",
-      "456 Park Ave, New York, NY",
-      "789 Broadway, New York, NY",
-      "321 5th Ave, New York, NY",
-      "654 Madison Ave, New York, NY"
-    ];
-    
-    setAddress(addresses[Math.floor(Math.random() * addresses.length)]);
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: position }, (results: google.maps.GeocoderResult[], status: google.maps.GeocoderStatus) => {
+      if (status === "OK" && results[0]) {
+        setAddress(results[0].formatted_address);
+      } else {
+        setAddress("Address not found");
+      }
+    });
   };
-  
+
   const confirmLocation = () => {
     onLocationSelect({
       address,
@@ -80,21 +129,8 @@ const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128,
         <div className="relative w-full h-full">
           <div 
             ref={mapRef} 
-            className="w-full h-full rounded-md bg-gray-200 flex items-center justify-center cursor-crosshair"
-            onClick={handleMapClick}
-          >
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <p className="text-gray-600 mb-2">(This would be the Google Map)</p>
-              <p className="text-xs text-gray-500">Click anywhere to set a location</p>
-            </div>
-            
-            {/* Simulated marker */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="h-8 w-8 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
-                <div className="h-4 w-4 bg-red-700 rounded-full"></div>
-              </div>
-            </div>
-          </div>
+            className="w-full h-full rounded-md"
+          />
           
           {address && (
             <div className="absolute bottom-3 left-0 right-0 mx-auto p-2 bg-white rounded-md shadow-md max-w-sm">

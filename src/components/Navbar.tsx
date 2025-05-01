@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, User, LogOut, Settings, UserCircle, BarChart3 } from "lucide-react";
+import { Search, LogOut, Settings, UserCircle, BarChart3 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BorrowBaseLogo from "./BorrowBaseLogo";
 import { useAuth } from "@/contexts/AuthContext";
