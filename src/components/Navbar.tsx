@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, User, LogOut, Settings, UserCircle } from "lucide-react";
+import { Search, User, LogOut, Settings, UserCircle, BarChart3 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BorrowBaseLogo from "./BorrowBaseLogo";
 import { useAuth } from "@/contexts/AuthContext";
@@ -102,6 +102,12 @@ const Navbar = () => {
                     <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link to="/analytics">
+                    <DropdownMenuItem>
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      <span>Analytics</span>
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuSeparator />

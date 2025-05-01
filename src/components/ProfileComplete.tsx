@@ -11,31 +11,47 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfileComplete = () => {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Show the dialog when a user logs in but hasn't completed their profile
+  // Show the dialog only when a user logs in for the first time
   useEffect(() => {
     if (user) {
-      // Check if profile is incomplete
-      // This is a simple check - you can expand this based on your requirements
-      const isProfileIncomplete = !user.user_metadata?.profile_completed;
+      // Check if this is a first login by checking if profile_completed flag exists
+      const isFirstLogin = user.user_metadata?.profile_completed === undefined;
       
-      if (isProfileIncomplete) {
+      if (isFirstLogin) {
         setOpen(true);
       }
     }
   }, [user]);
 
-  const handleCompleteProfile = () => {
+  const handleCompleteProfile = async () => {
+    // Mark profile as "seen completion dialog" so it won't show again
+    if (user) {
+      await supabase.auth.updateUser({
+        data: {
+          profile_completed: true,
+        },
+      });
+    }
     navigate('/settings');
     setOpen(false);
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    // Even if they skip, mark as having seen the dialog
+    if (user) {
+      await supabase.auth.updateUser({
+        data: {
+          profile_completed: true,
+        },
+      });
+    }
     setOpen(false);
   };
 
