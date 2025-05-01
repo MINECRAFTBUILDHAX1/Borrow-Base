@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
 import Layout from "./components/Layout";
+import ProfileComplete from "./components/ProfileComplete";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ProfileComplete />
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />

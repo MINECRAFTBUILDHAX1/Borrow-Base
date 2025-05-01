@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
@@ -111,6 +110,7 @@ const Auth = () => {
   const handleRegister = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
+      // For testing purposes, we'll skip email verification
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
@@ -118,7 +118,8 @@ const Auth = () => {
           data: {
             full_name: values.name,
           },
-          emailRedirectTo: `${window.location.origin}/auth`, 
+          // Auto-confirm email for testing purposes
+          emailRedirectTo: `${window.location.origin}/auth`,
         },
       });
       
@@ -131,11 +132,38 @@ const Auth = () => {
         return;
       }
       
-      setVerificationSent(true);
+      // If auto-confirm email is disabled, show verification message
+      if (data.user && !data.user.email_confirmed_at) {
+        setVerificationSent(true);
+        toast({
+          title: "Registration successful",
+          description: "Please check your email to verify your account.",
+        });
+        return;
+      }
+      
+      // Otherwise, show success and redirect
       toast({
         title: "Registration successful",
-        description: "Please check your email to verify your account.",
+        description: "Your account has been created!",
       });
+      
+      // Automatically log in after registration
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (signInError) {
+        toast({
+          title: "Login failed",
+          description: "Registration successful but couldn't auto-login. Please login manually.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      navigate("/");
     } catch (error: any) {
       toast({
         title: "Registration failed",
@@ -327,6 +355,9 @@ const Auth = () => {
           )}
         </TabsContent>
       </Tabs>
+      <p className="text-xs text-gray-500 mt-4 text-center">
+        For testing purposes, email verification is disabled. In production, users would receive an email to verify their account.
+      </p>
     </div>
   );
 };

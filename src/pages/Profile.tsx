@@ -23,16 +23,16 @@ const Profile = () => {
       setIsLoading(true);
       try {
         // In a real app, fetch user data from Supabase based on ID
-        // For now, we'll use mock data but personalize it for the logged-in user
+        // For now, we'll use the actual user metadata from Supabase Auth
         
-        // This would be replaced with a real API call to fetch profile data
+        // This would be replaced with a real API call to fetch complete profile data
         const mockUserData: UserData = {
           id: user?.id || "user123",
-          name: user?.user_metadata?.full_name || "User",
+          name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User",
           image: user?.user_metadata?.avatar_url || "https://randomuser.me/api/portraits/men/32.jpg",
-          bio: "Sharing enthusiast and community member. I enjoy connecting with others through shared resources.",
-          location: "New York, NY",
-          memberSince: "April 2025",
+          bio: user?.user_metadata?.bio || "Sharing enthusiast and community member.",
+          location: user?.user_metadata?.location || "New York, NY",
+          memberSince: user?.user_metadata?.memberSince || new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}),
           rating: 4.9,
           reviewCount: 42,
           verified: true,
@@ -43,7 +43,7 @@ const Profile = () => {
               price: 35,
               priceUnit: "day",
               imageUrl: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8Y2FtZXJhfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-              location: "Brooklyn, NY",
+              location: user?.user_metadata?.location || "Brooklyn, NY",
               rating: 4.9,
               reviewCount: 23,
               category: "Electronics"
@@ -54,7 +54,7 @@ const Profile = () => {
               price: 20,
               priceUnit: "day",
               imageUrl: "https://images.unsplash.com/photo-1585504198199-20277a781a1d?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8cHJvamVjdG9yfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&w=1000&q=80",
-              location: "Brooklyn, NY",
+              location: user?.user_metadata?.location || "Brooklyn, NY",
               rating: 4.5,
               reviewCount: 12,
               category: "Electronics"
@@ -65,7 +65,7 @@ const Profile = () => {
               price: 45,
               priceUnit: "day",
               imageUrl: "https://images.unsplash.com/photo-1507582020474-9a35b7d455d9?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8ZHJvbmV8ZW58MHx8MHx8&ixlib=rb-1.2.1&w=1000&q=80",
-              location: "Brooklyn, NY",
+              location: user?.user_metadata?.location || "Brooklyn, NY",
               rating: 4.8,
               reviewCount: 22,
               category: "Electronics"

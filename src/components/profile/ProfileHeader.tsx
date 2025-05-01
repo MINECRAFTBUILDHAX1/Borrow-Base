@@ -2,6 +2,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Star, Settings, MessageCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserData {
   id: string;
@@ -21,6 +23,20 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader = ({ userData, isOwnProfile }: ProfileHeaderProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const handleEditProfile = () => {
+    navigate('/settings');
+  };
+  
+  const handleMessage = () => {
+    toast({
+      title: "Message feature",
+      description: "Messaging functionality coming soon!",
+    });
+  };
+  
   return (
     <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
       <Avatar className="h-20 w-20 md:h-32 md:w-32">
@@ -46,12 +62,12 @@ const ProfileHeader = ({ userData, isOwnProfile }: ProfileHeaderProps) => {
           </div>
           
           {isOwnProfile ? (
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2" onClick={handleEditProfile}>
               <Settings className="h-4 w-4" />
               Edit Profile
             </Button>
           ) : (
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={handleMessage}>
               <MessageCircle className="h-4 w-4" />
               Message
             </Button>

@@ -15,6 +15,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mock listing data collection (would be fetched from API in real app)
 const mockListings = {
@@ -183,6 +195,11 @@ const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [messageText, setMessageText] = useState("");
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -190,23 +207,57 @@ const ListingDetails = () => {
   const listing = id ? mockListings[id as keyof typeof mockListings] : null;
   
   const handleBookNow = () => {
-    toast({
-      title: "Booking initiated",
-      description: "This feature is coming soon. Thanks for your interest!",
-    });
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to book this item",
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    setBookingModalOpen(true);
   };
   
   const handleContactOwner = () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to contact the owner",
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    setContactModalOpen(true);
+  };
+  
+  const handleSendMessage = () => {
+    if (!messageText.trim()) {
+      toast({
+        title: "Message required",
+        description: "Please enter a message to send",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Message sent",
       description: "The owner will respond to your inquiry soon.",
     });
+    
+    setMessageText("");
+    setContactModalOpen(false);
   };
   
-  const handleViewAllReviews = () => {
+  const handleConfirmBooking = () => {
     toast({
-      description: "All reviews will be shown in a future update.",
+      title: "Booking confirmed",
+      description: "Your booking has been submitted. You'll receive a confirmation soon.",
     });
+    
+    setBookingModalOpen(false);
   };
   
   // If listing not found, show appropriate message
@@ -219,6 +270,8 @@ const ListingDetails = () => {
       </div>
     );
   }
+  
+  const displayedReviews = showAllReviews ? listing.reviews : listing.reviews.slice(0, 3);
   
   return (
     <div className="container mx-auto py-6 px-4">
@@ -337,7 +390,7 @@ const ListingDetails = () => {
             </div>
             
             <div className="space-y-4">
-              {listing.reviews.map(review => (
+              {displayedReviews.map(review => (
                 <Card key={review.id} className="border-gray-200">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-2">
@@ -363,7 +416,13 @@ const ListingDetails = () => {
                 </Card>
               ))}
               
-              <Button variant="outline" className="w-full" onClick={handleViewAllReviews}>View all reviews</Button>
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => setShowAllReviews(!showAllReviews)}
+              >
+                {showAllReviews ? "Show less" : "View all reviews"}
+              </Button>
             </div>
           </div>
         </div>
@@ -401,7 +460,11 @@ const ListingDetails = () => {
                 </div>
                 
                 <Button className="w-full mb-3" onClick={handleBookNow}>Book Now</Button>
-                <Button variant="outline" className="w-full flex items-center justify-center gap-2" onClick={handleContactOwner}>
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center gap-2" 
+                  onClick={handleContactOwner}
+                >
                   <MessageCircle className="h-4 w-4" />
                   Contact Owner
                 </Button>
@@ -424,6 +487,86 @@ const ListingDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Contact Owner Modal */}
+      <Dialog open={contactModalOpen} onOpenChange={setContactModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Contact Owner</DialogTitle>
+            <DialogDescription>
+              Send a message to {listing.owner.name} about this item.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-4 mb-4">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={listing.owner.image} alt={listing.owner.name} />
+                <AvatarFallback>{listing.owner.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{listing.owner.name}</p>
+                <p className="text-sm text-gray-500">Typically responds within {listing.owner.responseTime.toLowerCase()}</p>
+              </div>
+            </div>
+            <Textarea 
+              placeholder="Write your message here..." 
+              className="min-h-24"
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleSendMessage}>Send Message</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Book Now Modal */}
+      <Dialog open={bookingModalOpen} onOpenChange={setBookingModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Book {listing.title}</DialogTitle>
+            <DialogDescription>
+              Complete your booking details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <div className="font-medium text-sm mb-2">Rental Dates</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
+                  <Input type="date" className="w-full" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">End Date</label>
+                  <Input type="date" className="w-full" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="font-medium text-sm mb-2">Payment Details</div>
+              <Input type="text" placeholder="Card number" className="mb-2" />
+              <div className="grid grid-cols-2 gap-4">
+                <Input type="text" placeholder="MM/YY" />
+                <Input type="text" placeholder="CVC" />
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Your card will be charged ${listing.price} per {listing.priceUnit} plus a refundable security deposit of ${listing.deposit}.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleConfirmBooking}>Confirm Booking</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
