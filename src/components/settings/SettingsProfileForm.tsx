@@ -18,6 +18,7 @@ const profileSchema = z.object({
   fullName: z.string().min(1, { message: "Name is required" }),
   bio: z.string().optional(),
   location: z.string().optional(),
+  paypalEmail: z.string().email({ message: "Invalid PayPal email address" }).optional().or(z.literal('')),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -43,6 +44,7 @@ const SettingsProfileForm = () => {
       fullName: user?.user_metadata?.full_name || "",
       bio: user?.user_metadata?.bio || "",
       location: user?.user_metadata?.location || "",
+      paypalEmail: user?.user_metadata?.paypal_email || "",
     },
   });
 
@@ -52,6 +54,7 @@ const SettingsProfileForm = () => {
       profileForm.setValue('fullName', user.user_metadata?.full_name || "");
       profileForm.setValue('bio', user.user_metadata?.bio || "");
       profileForm.setValue('location', user.user_metadata?.location || "");
+      profileForm.setValue('paypalEmail', user.user_metadata?.paypal_email || "");
     }
   }, [user, profileForm]);
 
@@ -72,6 +75,7 @@ const SettingsProfileForm = () => {
           full_name: values.fullName,
           bio: values.bio,
           location: values.location,
+          paypal_email: values.paypalEmail,
           profile_completed: true,
         },
       });
@@ -256,6 +260,28 @@ const SettingsProfileForm = () => {
                   </Button>
                 </div>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={profileForm.control}
+            name="paypalEmail"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>PayPal Email Address</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="your-email@example.com" 
+                    type="email"
+                    {...field} 
+                    value={field.value || ""}
+                  />
+                </FormControl>
+                <FormMessage />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Required for receiving payments when your items are rented.
+                </p>
               </FormItem>
             )}
           />

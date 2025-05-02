@@ -63,13 +63,21 @@ const ProfileComplete = () => {
         <DialogHeader>
           <DialogTitle>Complete Your Profile</DialogTitle>
           <DialogDescription>
-            Set up your profile to get the most out of BorrowBase. Add a profile photo, bio, and location to help other users know more about you.
+            Set up your profile to get the most out of BorrowBase. Add your PayPal email address, profile photo, bio, and location to help other users know more about you.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <p className="text-sm text-gray-600">
-            A complete profile builds trust and increases your chances of successful rentals and borrowing experiences.
-          </p>
+          <div className="space-y-4">
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-md">
+              <p className="text-sm text-amber-800 font-medium">Important!</p>
+              <p className="text-sm text-amber-700">
+                To receive payments when your items are rented, you must add your PayPal email address to your profile.
+              </p>
+            </div>
+            <p className="text-sm text-gray-600">
+              A complete profile builds trust and increases your chances of successful rentals and borrowing experiences.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleSkip}>Skip for now</Button>
