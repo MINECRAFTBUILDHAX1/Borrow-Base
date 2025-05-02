@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SearchIcon, MapPin, Loader2 } from "lucide-react";
@@ -43,7 +44,7 @@ const Index = () => {
           .from('listings')
           .select('*')
           .eq('status', 'active')
-          .order('created_at', { ascending: false }) as unknown as PostgrestResponse<ListingTable[]>;
+          .order('created_at', { ascending: false }) as unknown as PostgrestResponse<ListingTable>;
           
         if (error) {
           throw error;
@@ -97,7 +98,7 @@ const Index = () => {
           .select('*')
           .eq('status', 'active')
           .eq('category', selectedCategory)
-          .order('created_at', { ascending: false }) as unknown as PostgrestResponse<ListingTable[]>;
+          .order('created_at', { ascending: false }) as unknown as PostgrestResponse<ListingTable>;
           
         if (error) {
           throw error;
