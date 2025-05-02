@@ -256,7 +256,7 @@ const CreateListing = () => {
       // Insert the new listing with proper type casting
       const { data, error } = await supabase
         .from('listings')
-        .insert(listingData) as unknown as PostgrestResponse<any>;
+        .insert(listingData) as unknown as PostgrestResponse<ListingTable>;
         
       if (error) {
         throw error;
