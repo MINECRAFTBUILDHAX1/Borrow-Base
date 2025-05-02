@@ -26,6 +26,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import Commission from "@/components/Commission";
 import MapLocationPicker from "@/components/MapLocationPicker";
+import { ListingTable } from "@/types/database";
 
 const categories = [
   { id: "tools", name: "Tools" },
@@ -62,6 +63,7 @@ const CreateListing = () => {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [loadingImages, setLoadingImages] = useState(false);
   const [selectedLocationDetails, setSelectedLocationDetails] = useState<any>(null);
+  const [mapApiLoaded, setMapApiLoaded] = useState(false);
   
   const addFeature = () => {
     setFeatures([...features, ""]);
@@ -250,10 +252,10 @@ const CreateListing = () => {
         created_at: new Date().toISOString(),
       };
       
-      // In a real implementation, save to Supabase
+      // Insert the new listing into Supabase
       const { data, error } = await supabase
         .from('listings')
-        .insert(listingData);
+        .insert(listingData as any);
         
       if (error) {
         throw error;

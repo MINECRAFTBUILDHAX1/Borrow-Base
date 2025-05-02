@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SearchIcon, MapPin, Loader2 } from "lucide-react";
@@ -7,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import ListingCard, { ListingProps } from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import { supabase } from "@/integrations/supabase/client";
+import { ListingTable } from "@/types/database";
 
 // Categories data
 const categories = [
@@ -42,7 +42,7 @@ const Index = () => {
           .from('listings')
           .select('*')
           .eq('status', 'active')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }) as { data: ListingTable[] | null, error: any };
           
         if (error) {
           throw error;
@@ -53,8 +53,8 @@ const Index = () => {
           const formattedListings = allListings.map(listing => ({
             id: listing.id,
             title: listing.title,
-            price: listing.price_per_day || 0,
-            priceUnit: "day",
+            price: listing.price_per_day,
+            priceUnit: 'day' as const,
             imageUrl: listing.images && listing.images.length > 0 
               ? listing.images[0] 
               : "https://via.placeholder.com/300x200?text=No+Image",
@@ -96,7 +96,7 @@ const Index = () => {
           .select('*')
           .eq('status', 'active')
           .eq('category', selectedCategory)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }) as { data: ListingTable[] | null, error: any };
           
         if (error) {
           throw error;
@@ -107,8 +107,8 @@ const Index = () => {
           const formattedListings = filteredListings.map(listing => ({
             id: listing.id,
             title: listing.title,
-            price: listing.price_per_day || 0,
-            priceUnit: "day",
+            price: listing.price_per_day,
+            priceUnit: 'day' as const,
             imageUrl: listing.images && listing.images.length > 0 
               ? listing.images[0] 
               : "https://via.placeholder.com/300x200?text=No+Image",

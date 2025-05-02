@@ -17,6 +17,8 @@ const Commission = ({ variant = "full", listingPrice }: CommissionProps) => {
     if (listingPrice) {
       const commission = listingPrice * commissionRate;
       setSellerEarnings(listingPrice - commission);
+    } else {
+      setSellerEarnings(null);
     }
   }, [listingPrice]);
 
