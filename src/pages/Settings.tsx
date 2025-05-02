@@ -13,13 +13,8 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  if (!user) {
-    navigate("/auth");
-    return null;
-  }
-
-  // Get tab from URL if present
+  
+  // Important: React hooks must be called unconditionally at the top level
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
@@ -27,6 +22,18 @@ const Settings = () => {
       setActiveTab(tab);
     }
   }, []);
+
+  // Handle navigation if user is not logged in
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
+  
+  // Return a loading state or null until we know if user is logged in
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="container max-w-4xl mx-auto py-10 px-4">
