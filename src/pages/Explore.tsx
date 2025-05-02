@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Search, Filter, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -24,7 +23,6 @@ import CategoryFilter from "@/components/CategoryFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { ListingTable } from "@/types/database";
-import { PostgrestResponse } from "@supabase/supabase-js";
 
 // Categories data
 const categories = [
@@ -122,16 +120,16 @@ const Explore = () => {
           query = query.lte('price_per_day', priceMax);
         }
         
-        // Execute the query with proper type casting
-        const { data, error } = await query as unknown as PostgrestResponse<ListingTable[]>;
+        // Execute the query
+        const { data, error } = await query;
         
         if (error) {
           throw error;
         }
         
         if (data) {
-          // Format listings to match the ListingProps type - Fixed to map over each item in the array
-          const formattedListings = data.map(listing => ({
+          // Format listings to match the ListingProps type
+          const formattedListings = data.map((listing: ListingTable) => ({
             id: listing.id,
             title: listing.title,
             price: listing.price_per_day || 0,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SearchIcon, MapPin, Loader2 } from "lucide-react";
@@ -8,7 +7,6 @@ import ListingCard, { ListingProps } from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingTable } from "@/types/database";
-import { PostgrestResponse } from "@supabase/supabase-js";
 
 // Categories data
 const categories = [
@@ -39,20 +37,20 @@ const Index = () => {
       setIsLoading(true);
       
       try {
-        // Fetch all listings with proper type casting
+        // Fetch all listings
         const { data: allListings, error } = await supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
-          .order('created_at', { ascending: false }) as unknown as PostgrestResponse<ListingTable[]>;
+          .order('created_at', { ascending: false });
           
         if (error) {
           throw error;
         }
         
         if (allListings) {
-          // Format listings to match the ListingProps type - Fixed to map over each item in the array
-          const formattedListings = allListings.map(listing => ({
+          // Format listings to match the ListingProps type
+          const formattedListings = allListings.map((listing: ListingTable) => ({
             id: listing.id,
             title: listing.title,
             price: listing.price_per_day,
@@ -92,21 +90,21 @@ const Index = () => {
       setIsLoading(true);
       
       try {
-        // Fetch listings filtered by category with proper type casting
+        // Fetch listings filtered by category
         const { data: filteredListings, error } = await supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
           .eq('category', selectedCategory)
-          .order('created_at', { ascending: false }) as unknown as PostgrestResponse<ListingTable[]>;
+          .order('created_at', { ascending: false });
           
         if (error) {
           throw error;
         }
         
         if (filteredListings) {
-          // Format listings to match the ListingProps type - Fixed to map over each item in the array
-          const formattedListings = filteredListings.map(listing => ({
+          // Format listings to match the ListingProps type
+          const formattedListings = filteredListings.map((listing: ListingTable) => ({
             id: listing.id,
             title: listing.title,
             price: listing.price_per_day,
