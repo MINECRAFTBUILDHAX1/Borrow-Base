@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SearchIcon, MapPin, Loader2 } from "lucide-react";
@@ -37,12 +38,18 @@ const Index = () => {
       setIsLoading(true);
       
       try {
-        // Fetch all listings (in a real app, you'd limit this and add pagination)
+        // Define explicit response type
+        interface ListingsResponse {
+          data: ListingTable[] | null;
+          error: any;
+        }
+        
+        // Fetch all listings with explicit typing
         const { data: allListings, error } = await supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
-          .order('created_at', { ascending: false }) as { data: ListingTable[] | null, error: any };
+          .order('created_at', { ascending: false }) as unknown as ListingsResponse;
           
         if (error) {
           throw error;
@@ -54,7 +61,7 @@ const Index = () => {
             id: listing.id,
             title: listing.title,
             price: listing.price_per_day,
-            priceUnit: 'day' as const,
+            priceUnit: 'day' as 'day' | 'hour' | 'week' | 'month', // Explicitly cast to the union type
             imageUrl: listing.images && listing.images.length > 0 
               ? listing.images[0] 
               : "https://via.placeholder.com/300x200?text=No+Image",
@@ -90,13 +97,19 @@ const Index = () => {
       setIsLoading(true);
       
       try {
-        // Fetch listings filtered by category
+        // Define explicit response type
+        interface ListingsResponse {
+          data: ListingTable[] | null;
+          error: any;
+        }
+        
+        // Fetch listings filtered by category with explicit typing
         const { data: filteredListings, error } = await supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
           .eq('category', selectedCategory)
-          .order('created_at', { ascending: false }) as { data: ListingTable[] | null, error: any };
+          .order('created_at', { ascending: false }) as unknown as ListingsResponse;
           
         if (error) {
           throw error;
@@ -108,7 +121,7 @@ const Index = () => {
             id: listing.id,
             title: listing.title,
             price: listing.price_per_day,
-            priceUnit: 'day' as const,
+            priceUnit: 'day' as 'day' | 'hour' | 'week' | 'month', // Explicitly cast to the union type
             imageUrl: listing.images && listing.images.length > 0 
               ? listing.images[0] 
               : "https://via.placeholder.com/300x200?text=No+Image",

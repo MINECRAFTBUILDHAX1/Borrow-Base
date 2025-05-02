@@ -252,10 +252,16 @@ const CreateListing = () => {
         created_at: new Date().toISOString(),
       };
       
-      // Insert the new listing into Supabase
+      // Define explicit response type for TypeScript
+      interface InsertResponse {
+        data: any;
+        error: any;
+      }
+      
+      // Insert the new listing into Supabase with proper typing
       const { data, error } = await supabase
         .from('listings')
-        .insert(listingData as any);
+        .insert(listingData) as unknown as InsertResponse;
         
       if (error) {
         throw error;

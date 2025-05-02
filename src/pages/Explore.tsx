@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Search, Filter, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -23,6 +22,7 @@ import ListingCard, { ListingProps } from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { ListingTable } from "@/types/database";
 
 // Categories data
 const categories = [
@@ -91,6 +91,12 @@ const Explore = () => {
       
       try {
         // Start building the query
+        // Need to explicitly type the response to make TypeScript happy
+        interface ListingsResponse {
+          data: ListingTable[] | null;
+          error: any;
+        }
+        
         let query = supabase
           .from('listings')
           .select('*')
@@ -120,8 +126,8 @@ const Explore = () => {
           query = query.lte('price_per_day', priceMax);
         }
         
-        // Execute the query
-        const { data, error } = await query;
+        // Execute the query with explicit typing
+        const { data, error } = await query as unknown as ListingsResponse;
         
         if (error) {
           throw error;
@@ -133,7 +139,7 @@ const Explore = () => {
             id: listing.id,
             title: listing.title,
             price: listing.price_per_day || 0,
-            priceUnit: "day",
+            priceUnit: "day" as "day" | "hour" | "week" | "month", // explicitly cast to union type
             imageUrl: listing.images && listing.images.length > 0 
               ? listing.images[0] 
               : "https://via.placeholder.com/300x200?text=No+Image",
