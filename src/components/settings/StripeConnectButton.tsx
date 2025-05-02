@@ -11,43 +11,66 @@ const StripeConnectButton = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const handleStripeConnect = async () => {
-    if (!user) {
-      toast({
-        title: "Not logged in",
-        description: "You must be logged in to connect your Stripe account",
-        variant: "destructive"
-      });
-      return;
+ const handleStripeConnect = async () => {
+  if (!user) {
+    toast({
+      title: "Not logged in",
+      description: "You must be logged in to connect your Stripe account",
+      variant: "destructive"
+    });
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    // Get the current session so we can grab the access token
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session?.access_token) {
+      throw new Error("Could not get access token");
     }
 
-    setIsLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        'create-stripe-account',
-        {
-          body: { user_id: user.id }
-        }
-      );
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No URL returned from Stripe");
+    // Call the edge function WITH the authorization header
+    const response = await fetch(
+      "https://ezyxsrncfdrapwkzvcen.supabase.co/functions/v1/create-stripe-account",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}` // 🧠 This is key
+        },
+        body: JSON.stringify({
+          user_id: user.id
+        })
       }
-    } catch (error: any) {
-      toast({
-        title: "Connection Failed",
-        description: error.message || "Failed to connect to Stripe. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Stripe connection failed");
     }
-  };
+
+    if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error("No URL returned from Stripe");
+    }
+  } catch (error: any) {
+    toast({
+      title: "Connection Failed",
+      description: error.message || "Failed to connect to Stripe. Please try again.",
+      variant: "destructive"
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <Button 
