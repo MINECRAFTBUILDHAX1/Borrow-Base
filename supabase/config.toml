@@ -1,1 +1,31 @@
+
+# Updated Supabase config file with project id
 project_id = "ezyxsrncfdrapwkzvcen"
+
+[api]
+enabled = true
+port = 54321
+max_rows = 1000
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+
+[realtime]
+enabled = true
+
+[functions.create-stripe-account]
+verify_jwt = true

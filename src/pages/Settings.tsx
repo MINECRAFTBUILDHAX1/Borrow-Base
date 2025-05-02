@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import SettingsProfileForm from "@/components/settings/SettingsProfileForm";
 import SettingsSecurityForm from "@/components/settings/SettingsSecurityForm";
 import SettingsBillingInfo from "@/components/settings/SettingsBillingInfo";
+import StripeConnectButton from "@/components/settings/StripeConnectButton";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -19,13 +20,13 @@ const Settings = () => {
   }
 
   // Get tab from URL if present
-  useState(() => {
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
     if (tab && ['profile', 'security', 'notifications', 'billing'].includes(tab)) {
       setActiveTab(tab);
     }
-  });
+  }, []);
 
   return (
     <div className="container max-w-4xl mx-auto py-10 px-4">
@@ -82,7 +83,15 @@ const Settings = () => {
               <CardDescription>Learn about BorrowBase's fee structure</CardDescription>
             </CardHeader>
             <CardContent>
-              <SettingsBillingInfo />
+              <div className="space-y-6">
+                <div className="bg-amber-50 p-4 border border-amber-200 rounded-md">
+                  <h3 className="font-medium text-amber-800 mb-2">Become a Lender</h3>
+                  <p className="text-amber-700 mb-4">Connect your Stripe account to receive payments directly when users rent your items.</p>
+                  <StripeConnectButton />
+                </div>
+                
+                <SettingsBillingInfo />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
