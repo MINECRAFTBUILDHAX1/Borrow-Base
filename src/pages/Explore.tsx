@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Search, Filter, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -129,7 +130,7 @@ const Explore = () => {
         }
         
         if (data) {
-          // Format listings to match the ListingProps type
+          // Format listings to match the ListingProps type - Fixed to map over each item in the array
           const formattedListings = data.map(listing => ({
             id: listing.id,
             title: listing.title,

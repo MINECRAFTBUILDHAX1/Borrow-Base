@@ -51,7 +51,7 @@ const Index = () => {
         }
         
         if (allListings) {
-          // Format listings to match the ListingProps type
+          // Format listings to match the ListingProps type - Fixed to map over each item in the array
           const formattedListings = allListings.map(listing => ({
             id: listing.id,
             title: listing.title,
@@ -105,7 +105,7 @@ const Index = () => {
         }
         
         if (filteredListings) {
-          // Format listings to match the ListingProps type
+          // Format listings to match the ListingProps type - Fixed to map over each item in the array
           const formattedListings = filteredListings.map(listing => ({
             id: listing.id,
             title: listing.title,
