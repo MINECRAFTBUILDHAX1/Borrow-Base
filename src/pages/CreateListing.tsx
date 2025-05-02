@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Commission from "@/components/Commission";
 import MapLocationPicker from "@/components/MapLocationPicker";
 import { ListingTable } from "@/types/database";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 const categories = [
   { id: "tools", name: "Tools" },
@@ -252,16 +253,10 @@ const CreateListing = () => {
         created_at: new Date().toISOString(),
       };
       
-      // Define explicit response type for TypeScript
-      interface InsertResponse {
-        data: any;
-        error: any;
-      }
-      
-      // Insert the new listing into Supabase with proper typing
+      // Insert the new listing with proper type casting
       const { data, error } = await supabase
         .from('listings')
-        .insert(listingData) as unknown as InsertResponse;
+        .insert(listingData) as unknown as PostgrestResponse<any>;
         
       if (error) {
         throw error;

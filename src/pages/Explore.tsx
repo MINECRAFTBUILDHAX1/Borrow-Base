@@ -23,6 +23,7 @@ import CategoryFilter from "@/components/CategoryFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { ListingTable } from "@/types/database";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 // Categories data
 const categories = [
@@ -91,12 +92,6 @@ const Explore = () => {
       
       try {
         // Start building the query
-        // Need to explicitly type the response to make TypeScript happy
-        interface ListingsResponse {
-          data: ListingTable[] | null;
-          error: any;
-        }
-        
         let query = supabase
           .from('listings')
           .select('*')
@@ -126,8 +121,8 @@ const Explore = () => {
           query = query.lte('price_per_day', priceMax);
         }
         
-        // Execute the query with explicit typing
-        const { data, error } = await query as unknown as ListingsResponse;
+        // Execute the query with proper type casting
+        const { data, error } = await query as unknown as PostgrestResponse<ListingTable[]>;
         
         if (error) {
           throw error;

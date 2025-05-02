@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SearchIcon, MapPin, Loader2 } from "lucide-react";
@@ -8,6 +7,7 @@ import ListingCard, { ListingProps } from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingTable } from "@/types/database";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 // Categories data
 const categories = [
@@ -38,18 +38,12 @@ const Index = () => {
       setIsLoading(true);
       
       try {
-        // Define explicit response type
-        interface ListingsResponse {
-          data: ListingTable[] | null;
-          error: any;
-        }
-        
-        // Fetch all listings with explicit typing
+        // Fetch all listings with proper type casting
         const { data: allListings, error } = await supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
-          .order('created_at', { ascending: false }) as unknown as ListingsResponse;
+          .order('created_at', { ascending: false }) as unknown as PostgrestResponse<ListingTable[]>;
           
         if (error) {
           throw error;
@@ -97,19 +91,13 @@ const Index = () => {
       setIsLoading(true);
       
       try {
-        // Define explicit response type
-        interface ListingsResponse {
-          data: ListingTable[] | null;
-          error: any;
-        }
-        
-        // Fetch listings filtered by category with explicit typing
+        // Fetch listings filtered by category with proper type casting
         const { data: filteredListings, error } = await supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
           .eq('category', selectedCategory)
-          .order('created_at', { ascending: false }) as unknown as ListingsResponse;
+          .order('created_at', { ascending: false }) as unknown as PostgrestResponse<ListingTable[]>;
           
         if (error) {
           throw error;
