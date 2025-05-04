@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,7 @@ const SettingsProfileForm = () => {
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [paypalSaved, setPaypalSaved] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -87,6 +88,13 @@ const SettingsProfileForm = () => {
           variant: "destructive",
         });
         return;
+      }
+      
+      if (values.paypalEmail) {
+        setPaypalSaved(true);
+        setTimeout(() => {
+          setPaypalSaved(false);
+        }, 3000);
       }
       
       toast({
@@ -243,7 +251,7 @@ const SettingsProfileForm = () => {
                 <div className="flex">
                   <FormControl>
                     <Input
-                      placeholder="New York, NY"
+                      placeholder="London, UK"
                       {...field}
                       value={field.value || ""}
                       readOnly={showMap}
@@ -270,17 +278,26 @@ const SettingsProfileForm = () => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>PayPal Email Address</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="your-email@example.com" 
-                    type="email"
-                    {...field} 
-                    value={field.value || ""}
-                  />
-                </FormControl>
+                <div className="flex items-center">
+                  <FormControl>
+                    <div className="relative flex-1">
+                      <Input 
+                        placeholder="your-paypal@example.com" 
+                        type="email"
+                        {...field} 
+                        value={field.value || ""}
+                      />
+                      {paypalSaved && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
+                          <Check className="h-5 w-5 text-green-500" />
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
+                </div>
                 <FormMessage />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Required for receiving payments when your items are rented.
+                  <strong>Required</strong> for receiving 85% of the payment when your items are rented.
                 </p>
               </FormItem>
             )}
@@ -290,7 +307,7 @@ const SettingsProfileForm = () => {
             <div className="border rounded-md p-1 h-[300px] mt-2">
               <MapLocationPicker
                 onLocationSelect={handleLocationSelect}
-                defaultLocation={{ lat: 40.7128, lng: -74.006 }}
+                defaultLocation={{ lat: 51.5074, lng: -0.1278 }}
               />
             </div>
           )}

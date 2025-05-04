@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import SettingsProfileForm from "@/components/settings/SettingsProfileForm";
 import SettingsSecurityForm from "@/components/settings/SettingsSecurityForm";
 import SettingsBillingInfo from "@/components/settings/SettingsBillingInfo";
-import StripeConnectButton from "@/components/settings/StripeConnectButton";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -92,9 +91,11 @@ const Settings = () => {
             <CardContent>
               <div className="space-y-6">
                 <div className="bg-amber-50 p-4 border border-amber-200 rounded-md">
-                  <h3 className="font-medium text-amber-800 mb-2">Become a Lender</h3>
-                  <p className="text-amber-700 mb-4">Connect your Stripe account to receive payments directly when users rent your items.</p>
-                  <StripeConnectButton />
+                  <h3 className="font-medium text-amber-800 mb-2">Payment Information</h3>
+                  <p className="text-amber-700 mb-4">
+                    Please ensure your PayPal email is added to your profile to receive payments when users rent your items.
+                    85% of the rental fee will be sent to your PayPal account within 2 days of the rental period beginning.
+                  </p>
                 </div>
                 
                 <SettingsBillingInfo />

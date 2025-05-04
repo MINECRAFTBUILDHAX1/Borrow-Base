@@ -1,52 +1,91 @@
 
-import { Separator } from "@/components/ui/separator";
-import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { InfoIcon } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const SettingsBillingInfo = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const hasPaypalEmail = user?.user_metadata?.paypal_email;
+  
   return (
-    <div className="space-y-4">
-      <Alert className="bg-amber-50 border-amber-200">
-        <AlertCircle className="h-5 w-5 text-amber-800" />
-        <AlertTitle className="text-amber-800 font-medium">Payment Information</AlertTitle>
-        <AlertDescription className="text-amber-700">
-          BorrowBase uses PayPal for all rental payments. You'll receive 85% of the rental amount 
-          within 2 days after the item is successfully rented.
-        </AlertDescription>
-      </Alert>
+    <div className="space-y-6">
+      {!hasPaypalEmail && (
+        <Alert variant="destructive" className="mb-4">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>PayPal Email Required</AlertTitle>
+          <AlertDescription>
+            You need to add your PayPal email address to receive payments when your items are rented.
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+              onClick={() => navigate('/settings?tab=profile')}
+            >
+              Add PayPal Email Now
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div>
-        <h3 className="font-medium mb-2">Fee Structure</h3>
-        <ul className="list-disc list-inside space-y-2 text-gray-700">
-          <li>BorrowBase takes a <strong>15% commission</strong> on each rental transaction</li>
-          <li><strong>85% of the rental amount</strong> is sent to your PayPal account</li>
-          <li>Payments are processed via PayPal.me/1millionjourney</li>
-          <li>Payments are processed in <strong>GBP</strong> by default</li>
-          <li>There are no fees to list your items on the platform</li>
+        <h3 className="text-lg font-medium mb-3">How Payments Work</h3>
+        <p className="text-sm text-gray-600 mb-2">
+          Our platform connects renters directly to lenders through PayPal. Here's how it works:
+        </p>
+        <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
+          <li>Renters pay through our secured PayPal integration</li>
+          <li>We automatically forward 85% of the payment to your PayPal email within 2 days</li>
+          <li>A 15% commission is retained to maintain and improve the platform</li>
         </ul>
       </div>
       
       <Separator />
       
       <div>
-        <h3 className="font-medium mb-2">Example Calculation</h3>
-        <div className="bg-gray-50 p-4 rounded-md">
-          <p>Item rental price: <strong>£100</strong></p>
-          <p>BorrowBase fee (15%): <strong>£15</strong></p>
-          <p>You receive: <strong>£85</strong></p>
-          <p className="text-sm text-muted-foreground mt-2">Payment will be sent to your PayPal email address within 2 days of completed rental.</p>
+        <h3 className="text-lg font-medium mb-3">Fee Structure</h3>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-700">Lender Receives:</span>
+            <span className="font-medium text-green-600">85% of rental price</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-700">Platform Fee:</span>
+            <span className="font-medium">15% of rental price</span>
+          </div>
         </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Fees help us provide secure payments, insurance options, customer support, and platform maintenance.
+        </p>
       </div>
-
-      <Separator />
-
-      <div>
-        <h3 className="font-medium mb-2">Payment Processing</h3>
-        <p className="text-gray-700">Make sure you've added your PayPal email address in your profile settings to receive payments.</p>
-        <div className="flex items-center mt-3">
-          <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" alt="PayPal" className="h-8" />
-        </div>
-      </div>
+      
+      {hasPaypalEmail && (
+        <>
+          <Separator />
+          <div>
+            <h3 className="text-lg font-medium mb-3">Your PayPal Information</h3>
+            <p className="text-sm flex items-center">
+              <span className="font-medium">Registered PayPal email:</span>
+              <span className="ml-2 text-gray-600">{user.user_metadata.paypal_email}</span>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="ml-2 h-6 text-xs"
+                onClick={() => navigate('/settings?tab=profile')}
+              >
+                Edit
+              </Button>
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              All your rental payments will be sent to this email address via PayPal.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 };

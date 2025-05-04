@@ -394,7 +394,7 @@ const CreateListing = () => {
                 <h2 className="text-xl font-semibold mb-4">Pricing & Location</h2>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="pricePerDay">Price per day ($) *</Label>
+                  <Label htmlFor="pricePerDay">Price per day (£) *</Label>
                   <Input 
                     id="pricePerDay" 
                     type="number" 
@@ -413,7 +413,7 @@ const CreateListing = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="securityDeposit">Security Deposit ($)</Label>
+                  <Label htmlFor="securityDeposit">Security Deposit (£)</Label>
                   <Input 
                     id="securityDeposit" 
                     type="number" 

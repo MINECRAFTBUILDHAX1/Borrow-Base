@@ -56,7 +56,7 @@ const ListingCard = ({
             <p className="text-gray-500 text-xs mt-1">{distance < 1 ? `${(distance * 1000).toFixed(0)}m away` : `${distance.toFixed(1)}km away`}</p>
           )}
           <p className="font-semibold mt-2">
-            ${price}<span className="font-normal text-gray-500">/{priceUnit}</span>
+            £{price}<span className="font-normal text-gray-500">/{priceUnit}</span>
           </p>
         </CardContent>
       </Card>

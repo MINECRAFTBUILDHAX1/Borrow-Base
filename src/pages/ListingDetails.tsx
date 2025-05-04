@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Calendar, ChevronLeft, MapPin, Star, Clock, ShieldCheck, MessageCircle } from "lucide-react";
@@ -15,18 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import PaypalPaymentLink from "@/components/PaypalPaymentLink";
+import { Input } from "@/components/ui/input";
+import MessagingDialog from "@/components/MessagingDialog";
+import PaymentSuccessDialog from "@/components/PaymentSuccessDialog";
 
 // Mock listing data collection (would be fetched from API in real app)
 const mockListings = {
@@ -196,28 +189,80 @@ const ListingDetails = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [contactModalOpen, setContactModalOpen] = useState(false);
-  const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  const [messageText, setMessageText] = useState("");
+  const [paymentSuccessOpen, setPaymentSuccessOpen] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // Get the specific listing data based on ID
-  const listing = id ? mockListings[id as keyof typeof mockListings] : null;
-  
-  const handleBookNow = () => {
-    if (!user) {
-      toast({
-        title: "Login required",
-        description: "Please login to book this item",
-      });
-      navigate("/auth");
-      return;
-    }
+  const [listing, setListing] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch listing from Supabase if possible
+  useEffect(() => {
+    const fetchListing = async () => {
+      if (!id) return;
+      
+      try {
+        // Try to get listing from Supabase first
+        const { data, error } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (data) {
+          // If we have Supabase data, format it to match our listing structure
+          setListing({
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            price: data.price_per_day,
+            priceUnit: "day",
+            deposit: data.security_deposit || 0,
+            images: data.images || [],
+            location: data.location,
+            distance: "Available for pickup",
+            features: data.features || [],
+            rules: data.rules || [],
+            owner: {
+              id: data.user_id,
+              name: "Owner", // We'll update this later
+              image: "", // We'll update this later
+              rating: data.average_rating || 4.5,
+              reviewCount: data.review_count || 0,
+              responseTime: "Usually responds quickly",
+              memberSince: "2023"
+            },
+            reviews: [] // For now, we don't have reviews
+          });
+          
+          // Try to fetch user data for the owner
+          const { data: userData } = await supabase.auth.admin.getUserById(data.user_id);
+          if (userData && userData.user) {
+            setListing(prev => ({
+              ...prev,
+              owner: {
+                ...prev.owner,
+                name: userData.user.user_metadata?.full_name || "Owner",
+                image: userData.user.user_metadata?.avatar_url || "",
+              }
+            }));
+          }
+        } else {
+          // Fall back to mock data if we can't get from Supabase
+          setListing(id ? mockListings[id as keyof typeof mockListings] : null);
+        }
+      } catch (error) {
+        console.error("Error fetching listing:", error);
+        // Fall back to mock data
+        setListing(id ? mockListings[id as keyof typeof mockListings] : null);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    setBookingModalOpen(true);
-  };
+    fetchListing();
+  }, [id]);
   
   const handleContactOwner = () => {
     if (!user) {
@@ -231,35 +276,25 @@ const ListingDetails = () => {
     
     setContactModalOpen(true);
   };
-  
-  const handleSendMessage = () => {
-    if (!messageText.trim()) {
-      toast({
-        title: "Message required",
-        description: "Please enter a message to send",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    toast({
-      title: "Message sent",
-      description: "The owner will respond to your inquiry soon.",
-    });
-    
-    setMessageText("");
-    setContactModalOpen(false);
+
+  const handlePaymentSuccess = () => {
+    setPaymentSuccessOpen(true);
   };
   
-  const handleConfirmBooking = () => {
-    toast({
-      title: "Booking confirmed",
-      description: "Your booking has been submitted. You'll receive a confirmation soon.",
-    });
-    
-    setBookingModalOpen(false);
+  const handleContactSeller = () => {
+    setPaymentSuccessOpen(false);
+    setContactModalOpen(true);
   };
   
+  // If loading, show loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto py-12 px-4 text-center">
+        <p>Loading listing details...</p>
+      </div>
+    );
+  }
+
   // If listing not found, show appropriate message
   if (!listing) {
     return (
@@ -302,7 +337,7 @@ const ListingDetails = () => {
       <div className="mb-8">
         <Carousel className="w-full">
           <CarouselContent>
-            {listing.images.map((image, index) => (
+            {listing.images.map((image: string, index: number) => (
               <CarouselItem key={index} className="md:basis-2/3 lg:basis-1/2">
                 <div className="p-1">
                   <div className="overflow-hidden rounded-lg">
@@ -354,7 +389,7 @@ const ListingDetails = () => {
           <div>
             <h2 className="text-xl font-semibold mb-3">Features</h2>
             <ul className="grid grid-cols-2 gap-2">
-              {listing.features.map((feature, index) => (
+              {listing.features.map((feature: string, index: number) => (
                 <li key={index} className="flex items-center">
                   <div className="h-1.5 w-1.5 rounded-full bg-brand-purple mr-2"></div>
                   <span>{feature}</span>
@@ -367,7 +402,7 @@ const ListingDetails = () => {
           <div>
             <h2 className="text-xl font-semibold mb-3">Rules</h2>
             <ul className="space-y-2">
-              {listing.rules.map((rule, index) => (
+              {listing.rules.map((rule: string, index: number) => (
                 <li key={index} className="flex items-center">
                   <div className="h-1.5 w-1.5 rounded-full bg-brand-purple mr-2"></div>
                   <span>{rule}</span>
@@ -389,41 +424,47 @@ const ListingDetails = () => {
               </div>
             </div>
             
-            <div className="space-y-4">
-              {displayedReviews.map(review => (
-                <Card key={review.id} className="border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={review.user.image} alt={review.user.name} />
-                        <AvatarFallback>{review.user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{review.user.name}</div>
-                        <div className="text-xs text-gray-500">{review.date}</div>
+            {listing.reviews && listing.reviews.length > 0 ? (
+              <div className="space-y-4">
+                {displayedReviews.map((review: any) => (
+                  <Card key={review.id} className="border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={review.user.image} alt={review.user.name} />
+                          <AvatarFallback>{review.user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{review.user.name}</div>
+                          <div className="text-xs text-gray-500">{review.date}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
-                        />
-                      ))}
-                    </div>
-                    <p className="text-gray-700 text-sm">{review.comment}</p>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => setShowAllReviews(!showAllReviews)}
-              >
-                {showAllReviews ? "Show less" : "View all reviews"}
-              </Button>
-            </div>
+                      <div className="flex mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                          />
+                        ))}
+                      </div>
+                      <p className="text-gray-700 text-sm">{review.comment}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {listing.reviews.length > 3 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setShowAllReviews(!showAllReviews)}
+                  >
+                    {showAllReviews ? "Show less" : "View all reviews"}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500">No reviews yet.</p>
+            )}
           </div>
         </div>
         
@@ -434,7 +475,7 @@ const ListingDetails = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-2xl font-semibold">
-                    ${listing.price}<span className="text-base font-normal text-gray-600">/{listing.priceUnit}</span>
+                    £{listing.price}<span className="text-base font-normal text-gray-600">/{listing.priceUnit}</span>
                   </p>
                   <Badge variant="outline" className="bg-brand-pastel-green text-gray-800 font-normal">
                     Available Now
@@ -453,13 +494,19 @@ const ListingDetails = () => {
                   <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
                     <ShieldCheck className="h-5 w-5 text-gray-500" />
                     <div>
-                      <p className="text-sm font-medium">${listing.deposit} security deposit</p>
+                      <p className="text-sm font-medium">£{listing.deposit} security deposit</p>
                       <p className="text-xs text-gray-600">Will be refunded after successful return</p>
                     </div>
                   </div>
                 </div>
                 
-                <Button className="w-full mb-3" onClick={handleBookNow}>Book Now</Button>
+                <div 
+                  onClick={handlePaymentSuccess}
+                  className="mb-3"
+                >
+                  <PaypalPaymentLink amount={listing.price} currency="GBP" />
+                </div>
+                
                 <Button 
                   variant="outline" 
                   className="w-full flex items-center justify-center gap-2" 
@@ -470,7 +517,7 @@ const ListingDetails = () => {
                 </Button>
                 
                 <p className="text-xs text-center mt-4 text-gray-500">
-                  You won't be charged yet
+                  85% of the payment goes to the owner
                 </p>
               </CardContent>
             </Card>
@@ -480,7 +527,7 @@ const ListingDetails = () => {
               <div>
                 <p className="text-sm font-medium">Quick response</p>
                 <p className="text-xs text-gray-600">
-                  {listing.owner.name} typically responds within {listing.owner.responseTime.toLowerCase()}
+                  {listing.owner.name} typically responds within {listing.owner.responseTime && listing.owner.responseTime.toLowerCase()}
                 </p>
               </div>
             </div>
@@ -488,85 +535,29 @@ const ListingDetails = () => {
         </div>
       </div>
 
-      {/* Contact Owner Modal */}
-      <Dialog open={contactModalOpen} onOpenChange={setContactModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Contact Owner</DialogTitle>
-            <DialogDescription>
-              Send a message to {listing.owner.name} about this item.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex items-center gap-4 mb-4">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={listing.owner.image} alt={listing.owner.name} />
-                <AvatarFallback>{listing.owner.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{listing.owner.name}</p>
-                <p className="text-sm text-gray-500">Typically responds within {listing.owner.responseTime.toLowerCase()}</p>
-              </div>
-            </div>
-            <Textarea 
-              placeholder="Write your message here..." 
-              className="min-h-24"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSendMessage}>Send Message</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Contact Owner Modal - Now using MessagingDialog component */}
+      <MessagingDialog
+        open={contactModalOpen}
+        onOpenChange={setContactModalOpen}
+        recipientId={listing.owner.id}
+        recipientName={listing.owner.name}
+        recipientImage={listing.owner.image}
+        listingTitle={listing.title}
+        afterMessageSent={() => {
+          toast({
+            title: "Message sent",
+            description: `Your message has been sent to ${listing.owner.name}. They will respond soon.`,
+          });
+        }}
+      />
 
-      {/* Book Now Modal */}
-      <Dialog open={bookingModalOpen} onOpenChange={setBookingModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Book {listing.title}</DialogTitle>
-            <DialogDescription>
-              Complete your booking details
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <div className="font-medium text-sm mb-2">Rental Dates</div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Start Date</label>
-                  <Input type="date" className="w-full" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">End Date</label>
-                  <Input type="date" className="w-full" />
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="font-medium text-sm mb-2">Payment Details</div>
-              <Input type="text" placeholder="Card number" className="mb-2" />
-              <div className="grid grid-cols-2 gap-4">
-                <Input type="text" placeholder="MM/YY" />
-                <Input type="text" placeholder="CVC" />
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Your card will be charged ${listing.price} per {listing.priceUnit} plus a refundable security deposit of ${listing.deposit}.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleConfirmBooking}>Confirm Booking</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Payment Success Dialog */}
+      <PaymentSuccessDialog
+        open={paymentSuccessOpen}
+        onOpenChange={setPaymentSuccessOpen}
+        onContactSeller={handleContactSeller}
+        listingTitle={listing.title}
+      />
     </div>
   );
 };
