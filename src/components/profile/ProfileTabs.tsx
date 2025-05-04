@@ -18,6 +18,7 @@ interface Review {
 
 interface ProfileTabsProps {
   userData: {
+    id: string;
     name: string;
     listings: ListingProps[];
     rentals: ListingProps[];
@@ -40,6 +41,7 @@ const ProfileTabs = ({ userData, isOwnProfile }: ProfileTabsProps) => {
           listings={userData.listings} 
           userName={userData.name} 
           isOwnProfile={isOwnProfile} 
+          userId={userData.id}
         />
       </TabsContent>
       

@@ -15,6 +15,7 @@ export interface ListingProps {
   reviewCount: number;
   category: string;
   distance?: number;
+  userId?: string; // Added userId to track ownership
 }
 
 const ListingCard = ({ 
@@ -27,7 +28,8 @@ const ListingCard = ({
   rating, 
   reviewCount, 
   category,
-  distance 
+  distance,
+  userId
 }: ListingProps) => {
   return (
     <Link to={`/listing/${id}`}>

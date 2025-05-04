@@ -5,12 +5,22 @@ import { InfoIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const SettingsBillingInfo = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const hasPaypalEmail = user?.user_metadata?.paypal_email;
+  
+  const handleEditPaypal = () => {
+    navigate('/settings?tab=profile');
+    toast({
+      title: "Edit PayPal Email",
+      description: "You can update your PayPal email in the profile section.",
+    });
+  };
   
   return (
     <div className="space-y-6">
@@ -39,7 +49,7 @@ const SettingsBillingInfo = () => {
         </p>
         <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
           <li>Renters pay through our secured PayPal integration</li>
-          <li>We automatically forward 85% of the payment to your PayPal email within 2 days</li>
+          <li>We automatically forward 85% of the payment to your PayPal email within 2 days of rental start</li>
           <li>A 15% commission is retained to maintain and improve the platform</li>
         </ul>
       </div>
@@ -59,7 +69,7 @@ const SettingsBillingInfo = () => {
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          Fees help us provide secure payments, insurance options, customer support, and platform maintenance.
+          Fees help us provide secure payments, customer support, and platform maintenance.
         </p>
       </div>
       
@@ -75,7 +85,7 @@ const SettingsBillingInfo = () => {
                 variant="ghost" 
                 size="sm"
                 className="ml-2 h-6 text-xs"
-                onClick={() => navigate('/settings?tab=profile')}
+                onClick={handleEditPaypal}
               >
                 Edit
               </Button>
