@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format, addDays } from "date-fns";
+import { format, addDays, isSameDay, isWithinInterval } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -36,6 +36,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+interface RentalDateRange {
+  start: Date;
+  end: Date;
+}
 
 const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,20 +52,24 @@ const ListingDetails = () => {
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+  const [bookedRanges, setBookedRanges] = useState<RentalDateRange[]>([]);
+  const [rentalId, setRentalId] = useState<string | null>(null);
+  const [rentalCode, setRentalCode] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [listing, setListing] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [bookedDates, setBookedDates] = useState<Date[]>([]);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
+  const [owner, setOwner] = useState<any | null>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
   
   // Calculate total price when dates are selected
   useEffect(() => {
     if (startDate && endDate && listing) {
       const msPerDay = 1000 * 60 * 60 * 24;
       const days = Math.ceil((endDate.getTime() - startDate.getTime()) / msPerDay) + 1;
-      setTotalPrice(days * listing.price);
+      setTotalPrice(days * listing.price_per_day);
     } else {
       setTotalPrice(null);
     }
@@ -86,59 +95,29 @@ const ListingDetails = () => {
             id: data.id,
             title: data.title,
             description: data.description,
-            price: data.price_per_day,
-            priceUnit: "day",
-            deposit: data.security_deposit || 0,
+            price_per_day: data.price_per_day,
+            security_deposit: data.security_deposit || 0,
             images: data.images || [],
             location: data.location,
-            distance: "Available for pickup",
             features: data.features || [],
             rules: data.rules || [],
             userId: data.user_id,
-            owner: {
-              id: data.user_id,
-              name: "Owner", // We'll update this later
-              image: "", // We'll update this later
-              rating: data.average_rating || 4.5,
-              reviewCount: data.review_count || 0,
-              responseTime: "Usually responds quickly",
-              memberSince: "2023"
-            },
-            reviews: [], // For now, we don't have reviews
-            bookedDates: [] // Will be populated with booked dates
+            category: data.category,
+            average_rating: data.average_rating || 0,
+            review_count: data.review_count || 0
           };
           
-          // Fetch user data for the owner
-          const { data: userData } = await supabase.auth.admin.getUserById(data.user_id);
-          if (userData && userData.user) {
-            listingData.owner = {
-              ...listingData.owner,
-              name: userData.user.user_metadata?.full_name || "Lender",
-              image: userData.user.user_metadata?.avatar_url || "",
-            };
-          }
-          
-          // Fetch booked dates for this listing (this would be from a 'rentals' table)
-          // This is just placeholder code - would need a real rentals table implementation
-          // const { data: rentalsData } = await supabase
-          //   .from('rentals')
-          //   .select('start_date, end_date')
-          //   .eq('listing_id', id);
-          
-          // if (rentalsData) {
-          //   const unavailableDates = [];
-          //   for (const rental of rentalsData) {
-          //     const start = new Date(rental.start_date);
-          //     const end = new Date(rental.end_date);
-          //     // Add all dates between start and end to unavailableDates
-          //     for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
-          //       unavailableDates.push(new Date(d));
-          //     }
-          //   }
-          //   listingData.bookedDates = unavailableDates;
-          // }
-          
           setListing(listingData);
+          
+          // Fetch owner data separately
+          fetchOwnerData(data.user_id);
+          
+          // Fetch booked dates for this listing
+          fetchBookedDates(data.id);
+          
+          // Fetch reviews for this listing (would be from a 'reviews' table if we had one)
+          // For now, we'll use mock reviews
+          setReviews([]);
         }
       } catch (error) {
         console.error("Error fetching listing:", error);
@@ -155,6 +134,49 @@ const ListingDetails = () => {
     fetchListing();
   }, [id, toast]);
   
+  const fetchOwnerData = async (ownerId: string) => {
+    if (!ownerId) return;
+    
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(ownerId);
+      if (userData && userData.user) {
+        setOwner({
+          id: ownerId,
+          name: userData.user.user_metadata?.full_name || 
+                userData.user.email?.split('@')[0] || 
+                "Lender",
+          email: userData.user.email,
+          image: userData.user.user_metadata?.avatar_url || "",
+          createdAt: userData.user.created_at
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching owner data:", error);
+    }
+  };
+  
+  const fetchBookedDates = async (listingId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('rentals')
+        .select('start_date, end_date')
+        .eq('listing_id', listingId)
+        .in('status', ['paid', 'waiting_for_payment']);
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const ranges = data.map(rental => ({
+          start: new Date(rental.start_date),
+          end: new Date(rental.end_date)
+        }));
+        setBookedRanges(ranges);
+      }
+    } catch (error) {
+      console.error("Error fetching booked dates:", error);
+    }
+  };
+  
   const handleContactOwner = () => {
     if (!user) {
       toast({
@@ -168,8 +190,66 @@ const ListingDetails = () => {
     setContactModalOpen(true);
   };
 
-  const handlePaymentSuccess = () => {
-    setPaymentSuccessOpen(true);
+  const handlePaymentInitiate = async () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to rent this item",
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    if (!startDate || !endDate || !totalPrice) {
+      toast({
+        title: "Select dates",
+        description: "Please select your rental dates first",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (user.id === listing.userId) {
+      toast({
+        title: "Can't rent your own item",
+        description: "You cannot rent an item that you've listed",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Create a new rental record in the database
+      const { data: rentalData, error } = await supabase
+        .from('rentals')
+        .insert({
+          listing_id: listing.id,
+          renter_id: user.id,
+          seller_id: listing.userId,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          total_price: totalPrice,
+          currency: 'GBP',
+          status: 'waiting_for_payment'
+        })
+        .select();
+        
+      if (error) throw error;
+      
+      if (rentalData && rentalData[0]) {
+        // Store the rental ID and code for use in the success dialog
+        setRentalId(rentalData[0].id);
+        setRentalCode(rentalData[0].rental_code);
+        setPaymentSuccessOpen(true);
+      }
+    } catch (error) {
+      console.error("Error creating rental:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create rental. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleContactSeller = () => {
@@ -188,6 +268,7 @@ const ListingDetails = () => {
     }
     
     // Here you would submit the review to your database
+    // For now, we just show a success message since we don't have a reviews table
     toast({
       title: "Review submitted",
       description: "Thank you for your feedback!",
@@ -197,11 +278,10 @@ const ListingDetails = () => {
     setReviewText("");
   };
   
-  const isDateBooked = (date: Date) => {
-    return bookedDates.some(bookedDate => 
-      bookedDate.getFullYear() === date.getFullYear() &&
-      bookedDate.getMonth() === date.getMonth() &&
-      bookedDate.getDate() === date.getDate()
+  // Check if a date is already booked
+  const isDateBooked = (date: Date): boolean => {
+    return bookedRanges.some(range => 
+      isWithinInterval(date, { start: range.start, end: range.end })
     );
   };
   
@@ -229,7 +309,7 @@ const ListingDetails = () => {
       } else {
         // Check if any date in the range is booked
         let isRangeValid = true;
-        const tempDate = new Date(startDate);
+        const tempDate = new Date(startDate.getTime());
         while (tempDate <= date) {
           if (isDateBooked(tempDate)) {
             isRangeValid = false;
@@ -271,7 +351,7 @@ const ListingDetails = () => {
     );
   }
   
-  const displayedReviews = showAllReviews ? listing.reviews : listing.reviews.slice(0, 3);
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
   const isOwner = user && user.id === listing.userId;
   
   return (
@@ -290,12 +370,11 @@ const ListingDetails = () => {
         <div className="flex items-center text-gray-600">
           <MapPin className="h-4 w-4 mr-1" />
           <span>{listing.location}</span>
-          <span className="ml-1 text-gray-500">({listing.distance})</span>
         </div>
         <div className="flex items-center">
           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-          <span>{listing.owner.rating}</span>
-          <span className="text-gray-500 ml-1">({listing.owner.reviewCount} reviews)</span>
+          <span>{listing.average_rating.toFixed(1)}</span>
+          <span className="text-gray-500 ml-1">({listing.review_count} reviews)</span>
         </div>
       </div>
       
@@ -330,12 +409,16 @@ const ListingDetails = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12">
-                <AvatarImage src={listing.owner.image} alt={listing.owner.name} />
-                <AvatarFallback>{listing.owner.name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={owner?.image} alt={owner?.name} />
+                <AvatarFallback>{owner?.name?.charAt(0) || 'L'}</AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-medium">Listed by {listing.owner.name}</h3>
-                <p className="text-sm text-gray-600">Member since {listing.owner.memberSince}</p>
+                <h3 className="font-medium">Listed by {owner?.name || 'Lender'}</h3>
+                <p className="text-sm text-gray-600">
+                  Member since {owner?.createdAt 
+                    ? new Date(owner.createdAt).toLocaleDateString('en-US', {month: 'long', year: 'numeric'})
+                    : 'recently'}
+                </p>
               </div>
             </div>
             <Link to={`/profile/${listing.userId}`}>
@@ -352,41 +435,45 @@ const ListingDetails = () => {
           </div>
           
           {/* Features */}
-          <div>
-            <h2 className="text-xl font-semibold mb-3">Features</h2>
-            <ul className="grid grid-cols-2 gap-2">
-              {listing.features.map((feature: string, index: number) => (
-                <li key={index} className="flex items-center">
-                  <div className="h-1.5 w-1.5 rounded-full bg-brand-purple mr-2"></div>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {listing.features && listing.features.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Features</h2>
+              <ul className="grid grid-cols-2 gap-2">
+                {listing.features.map((feature: string, index: number) => (
+                  <li key={index} className="flex items-center">
+                    <div className="h-1.5 w-1.5 rounded-full bg-brand-purple mr-2"></div>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           
           {/* Rules */}
-          <div>
-            <h2 className="text-xl font-semibold mb-3">Rules</h2>
-            <ul className="space-y-2">
-              {listing.rules.map((rule: string, index: number) => (
-                <li key={index} className="flex items-center">
-                  <div className="h-1.5 w-1.5 rounded-full bg-brand-purple mr-2"></div>
-                  <span>{rule}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {listing.rules && listing.rules.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Rules</h2>
+              <ul className="space-y-2">
+                {listing.rules.map((rule: string, index: number) => (
+                  <li key={index} className="flex items-center">
+                    <div className="h-1.5 w-1.5 rounded-full bg-brand-purple mr-2"></div>
+                    <span>{rule}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           
           {/* Booked dates */}
           <div>
             <h2 className="text-xl font-semibold mb-3">Availability</h2>
-            {bookedDates.length > 0 ? (
+            {bookedRanges.length > 0 ? (
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="font-medium mb-2">Booked Dates:</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {bookedDates.map((date, index) => (
+                  {bookedRanges.map((range, index) => (
                     <div key={index} className="bg-red-50 text-red-600 px-2 py-1 rounded text-sm">
-                      {format(date, 'MMM dd, yyyy')}
+                      {format(range.start, 'MMM dd')} - {format(range.end, 'MMM dd, yyyy')}
                     </div>
                   ))}
                 </div>
@@ -404,12 +491,12 @@ const ListingDetails = () => {
               <h2 className="text-xl font-semibold">Reviews</h2>
               <div className="flex items-center">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                <span>{listing.owner.rating}</span>
-                <span className="text-gray-600 ml-1">({listing.owner.reviewCount} reviews)</span>
+                <span>{listing.average_rating.toFixed(1)}</span>
+                <span className="text-gray-600 ml-1">({listing.review_count} reviews)</span>
               </div>
             </div>
             
-            {listing.reviews && listing.reviews.length > 0 ? (
+            {reviews.length > 0 ? (
               <div className="space-y-4">
                 {displayedReviews.map((review: any) => (
                   <Card key={review.id} className="border-gray-200">
@@ -437,7 +524,7 @@ const ListingDetails = () => {
                   </Card>
                 ))}
                 
-                {listing.reviews.length > 3 && (
+                {reviews.length > 3 && (
                   <Button 
                     variant="outline" 
                     className="w-full" 
@@ -458,10 +545,10 @@ const ListingDetails = () => {
               </div>
             )}
             
-            {!isOwner && listing.reviews && listing.reviews.length > 0 && (
+            {!isOwner && (
               <div className="mt-4">
                 <Button onClick={() => setShowReviewDialog(true)}>
-                  Add a review
+                  {reviews.length > 0 ? "Add a review" : "Be the first to review"}
                 </Button>
               </div>
             )}
@@ -475,7 +562,7 @@ const ListingDetails = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-2xl font-semibold">
-                    £{listing.price}<span className="text-base font-normal text-gray-600">/{listing.priceUnit}</span>
+                    £{listing.price_per_day}<span className="text-base font-normal text-gray-600">/day</span>
                   </p>
                   <Badge variant="outline" className="bg-brand-pastel-green text-gray-800 font-normal">
                     Available Now
@@ -540,22 +627,28 @@ const ListingDetails = () => {
                     </div>
                   )}
                   
-                  <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
-                    <ShieldCheck className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">£{listing.deposit} security deposit</p>
-                      <p className="text-xs text-gray-600">Will be refunded after successful return</p>
+                  {listing.security_deposit > 0 && (
+                    <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+                      <ShieldCheck className="h-5 w-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium">£{listing.security_deposit} security deposit</p>
+                        <p className="text-xs text-gray-600">Will be refunded after successful return</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 {/* Payment link - only show if dates are selected */}
                 {startDate && endDate && totalPrice ? (
                   <div 
-                    onClick={handlePaymentSuccess}
+                    onClick={handlePaymentInitiate}
                     className="mb-3"
                   >
-                    <PaypalPaymentLink amount={totalPrice} currency="GBP" />
+                    <PaypalPaymentLink 
+                      amount={totalPrice} 
+                      currency="GBP" 
+                      rentalCode={rentalCode || undefined}
+                    />
                   </div>
                 ) : (
                   <div className="mb-3 text-center p-2 bg-amber-50 text-amber-700 rounded-lg text-sm">
@@ -624,13 +717,14 @@ const ListingDetails = () => {
         open={contactModalOpen}
         onOpenChange={setContactModalOpen}
         recipientId={listing.userId}
-        recipientName={listing.owner.name}
-        recipientImage={listing.owner.image}
+        recipientName={owner?.name || "Lender"}
+        recipientImage={owner?.image}
         listingTitle={listing.title}
+        rentalId={rentalId || undefined}
         afterMessageSent={() => {
           toast({
             title: "Message sent",
-            description: `Your message has been sent to ${listing.owner.name}. They will respond soon.`,
+            description: `Your message has been sent to ${owner?.name || 'the lender'}. They will respond soon.`,
           });
         }}
       />
@@ -641,6 +735,7 @@ const ListingDetails = () => {
         onOpenChange={setPaymentSuccessOpen}
         onContactSeller={handleContactSeller}
         listingTitle={listing.title}
+        rentalCode={rentalCode || undefined}
       />
     </div>
   );

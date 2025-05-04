@@ -9,6 +9,21 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
           average_rating: number | null
@@ -69,12 +84,106 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          rental_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          rental_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          rental_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rentals: {
+        Row: {
+          created_at: string
+          currency: string
+          end_date: string
+          id: string
+          listing_id: string
+          payment_note: string | null
+          rental_code: string
+          renter_id: string
+          seller_id: string
+          start_date: string
+          status: string
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          end_date: string
+          id?: string
+          listing_id: string
+          payment_note?: string | null
+          rental_code: string
+          renter_id: string
+          seller_id: string
+          start_date: string
+          status?: string
+          total_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          end_date?: string
+          id?: string
+          listing_id?: string
+          payment_note?: string | null
+          rental_code?: string
+          renter_id?: string
+          seller_id?: string
+          start_date?: string
+          status?: string
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rentals_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_rental_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

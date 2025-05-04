@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
+import AdminDashboard from "./pages/AdminDashboard";
 import Layout from "./components/Layout";
 import ProfileComplete from "./components/ProfileComplete";
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

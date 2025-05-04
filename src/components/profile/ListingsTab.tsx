@@ -2,15 +2,63 @@
 import { Button } from "@/components/ui/button";
 import ListingCard, { ListingProps } from "@/components/ListingCard";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ListingsTabProps {
   listings: ListingProps[];
   userName: string;
   isOwnProfile: boolean;
-  userId: string; // Add userId to associate listings with user
+  userId: string;
 }
 
-const ListingsTab = ({ listings, userName, isOwnProfile, userId }: ListingsTabProps) => {
+const ListingsTab = ({ listings: initialListings, userName, isOwnProfile, userId }: ListingsTabProps) => {
+  const [listings, setListings] = useState<ListingProps[]>(initialListings);
+  const { toast } = useToast();
+  
+  // Fetch actual listings from Supabase
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('user_id', userId);
+          
+        if (error) throw error;
+        
+        if (data) {
+          const formattedListings = data.map(item => ({
+            id: item.id,
+            title: item.title,
+            price: item.price_per_day,
+            priceUnit: 'day' as const,
+            imageUrl: item.images?.[0] || 'https://via.placeholder.com/300',
+            location: item.location,
+            rating: item.average_rating || 0,
+            reviewCount: item.review_count || 0,
+            category: item.category,
+            userId: item.user_id
+          }));
+          
+          setListings(formattedListings);
+        }
+      } catch (error) {
+        console.error("Error fetching listings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load listings data",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (userId) {
+      fetchListings();
+    }
+  }, [userId, toast]);
+
   return (
     <>
       <h2 className="text-xl font-semibold mb-4">
@@ -24,7 +72,7 @@ const ListingsTab = ({ listings, userName, isOwnProfile, userId }: ListingsTabPr
           <ListingCard 
             key={listing.id} 
             {...listing}
-            userId={userId} // Pass userId to associate with listings
+            userId={userId}
           />
         ))}
       </div>

@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 interface PaypalPaymentLinkProps {
   amount: number;
   currency?: "GBP" | "USD" | "EUR";
+  rentalCode?: string;
 }
 
-const PaypalPaymentLink = ({ amount, currency = "GBP" }: PaypalPaymentLinkProps) => {
+const PaypalPaymentLink = ({ amount, currency = "GBP", rentalCode }: PaypalPaymentLinkProps) => {
   const [paymentUrl, setPaymentUrl] = useState("");
   
   useEffect(() => {
@@ -28,6 +29,7 @@ const PaypalPaymentLink = ({ amount, currency = "GBP" }: PaypalPaymentLinkProps)
         className="h-5 mr-2"
       />
       Pay with PayPal ({currency} {amount.toFixed(2)})
+      {rentalCode && <span className="ml-2 text-sm bg-white/20 px-1 rounded">{rentalCode}</span>}
     </a>
   );
 };
