@@ -30,13 +30,13 @@ const Commission = ({ variant = "full", listingPrice }: CommissionProps) => {
         {listingPrice && (
           <div className="mt-2 pt-2 border-t border-amber-200">
             <p className="text-xs text-amber-800">
-              <span className="font-medium">For this price (${listingPrice}/day):</span>
+              <span className="font-medium">For this price (£{listingPrice}/day):</span>
             </p>
             <p className="text-xs text-amber-700">
-              • You'll earn: ${sellerEarnings?.toFixed(2)}/day
+              • You'll earn: £{sellerEarnings?.toFixed(2)}/day
             </p>
             <p className="text-xs text-amber-700">
-              • Service fee: ${(listingPrice * commissionRate).toFixed(2)}/day
+              • Service fee: £{(listingPrice * commissionRate).toFixed(2)}/day
             </p>
           </div>
         )}
@@ -57,13 +57,13 @@ const Commission = ({ variant = "full", listingPrice }: CommissionProps) => {
           {listingPrice && (
             <div className="mt-2 p-2 bg-amber-100 rounded-md">
               <p className="text-xs font-medium text-amber-800">
-                Example for ${listingPrice}/day:
+                Example for £{listingPrice}/day:
               </p>
               <p className="text-xs text-amber-700">
-                • You'll earn: ${sellerEarnings?.toFixed(2)}/day
+                • You'll earn: £{sellerEarnings?.toFixed(2)}/day
               </p>
               <p className="text-xs text-amber-700">
-                • Service fee: ${(listingPrice * commissionRate).toFixed(2)}/day
+                • Service fee: £{(listingPrice * commissionRate).toFixed(2)}/day
               </p>
             </div>
           )}

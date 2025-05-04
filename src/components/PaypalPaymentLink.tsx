@@ -19,8 +19,6 @@ const PaypalPaymentLink = ({ amount, currency = "GBP", rentalCode }: PaypalPayme
   return (
     <a 
       href={paymentUrl} 
-      target="_blank" 
-      rel="noopener noreferrer"
       className="bg-[#0070BA] hover:bg-[#003087] text-white font-medium py-2 px-4 rounded flex items-center justify-center"
     >
       <img 

@@ -1,295 +1,438 @@
 
 import { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Filter } from "lucide-react";
 
-interface Rental {
-  id: string;
-  rental_code: string;
-  renter_id: string;
-  seller_id: string;
-  listing_id: string;
-  start_date: string;
-  end_date: string;
-  total_price: number;
-  currency: string;
-  status: string;
-  payment_note: string | null;
-  created_at: string;
-}
+// Admin login credentials - hardcoded for now, in a real app these would be in a database
+const ADMIN_EMAIL = "admin@borrowbase.com";
+const ADMIN_PASSWORD = "admin123";
 
 const AdminDashboard = () => {
-  const [rentals, setRentals] = useState<Rental[]>([]);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [rentals, setRentals] = useState<any[]>([]);
+  const [filteredRentals, setFilteredRentals] = useState<any[]>([]);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [searchCode, setSearchCode] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if the current user is an admin
+  // Check if the user is an admin when component mounts
   useEffect(() => {
     const checkAdminStatus = async () => {
-      if (!user) {
-        setIsAdmin(false);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('user_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error checking admin status:", error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(Boolean(data));
-        }
-      } catch (error) {
-        console.error("Error checking admin status:", error);
-        setIsAdmin(false);
-      } finally {
-        setIsLoading(false);
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select()
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data) {
+        setIsAdmin(true);
+        setIsLoggedIn(true); // Auto-login for admin users
+        fetchRentals();
       }
     };
-
+    
     checkAdminStatus();
   }, [user]);
-
-  // Fetch rentals data
-  useEffect(() => {
-    if (isAdmin) {
+  
+  const handleLogin = () => {
+    setLoading(true);
+    
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      setIsLoggedIn(true);
       fetchRentals();
+      toast({
+        title: "Admin logged in",
+        description: "Welcome to the admin dashboard",
+      });
+    } else {
+      toast({
+        title: "Login failed",
+        description: "Invalid email or password",
+        variant: "destructive",
+      });
     }
-  }, [isAdmin]);
-
+    
+    setLoading(false);
+  };
+  
   const fetchRentals = async () => {
+    setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('rentals')
         .select(`
           *,
-          listing:listing_id (title),
-          renter:renter_id (email),
-          seller:seller_id (email)
+          listing:listing_id (title, price_per_day, images),
+          renter:renter_id (email, user_metadata),
+          seller:seller_id (email, user_metadata)
         `)
         .order('created_at', { ascending: false });
-
-      if (statusFilter) {
-        query = query.eq('status', statusFilter);
-      }
-
-      if (searchQuery) {
-        query = query.ilike('rental_code', `%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
-
+      
       if (error) throw error;
-      setRentals(data as any);
+      
+      if (data) {
+        setRentals(data);
+        setFilteredRentals(data);
+      }
     } catch (error) {
       console.error("Error fetching rentals:", error);
       toast({
         title: "Error",
-        description: "Failed to load rental data",
+        description: "Failed to load rentals data",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
-
+  
+  const handleFilter = (status: string) => {
+    setFilterStatus(status);
+    
+    if (status === 'all') {
+      setFilteredRentals(rentals);
+    } else {
+      const filtered = rentals.filter(rental => rental.status === status);
+      setFilteredRentals(filtered);
+    }
+  };
+  
+  const handleSearch = () => {
+    if (!searchCode.trim()) {
+      setFilteredRentals(rentals);
+      return;
+    }
+    
+    const filtered = rentals.filter(rental => 
+      rental.rental_code.toLowerCase().includes(searchCode.toLowerCase())
+    );
+    setFilteredRentals(filtered);
+  };
+  
   const updateRentalStatus = async (rentalId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('rentals')
-        .update({ status: newStatus })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', rentalId);
-
+      
       if (error) throw error;
-
-      setRentals(rentals.map(rental => 
-        rental.id === rentalId 
-          ? { ...rental, status: newStatus }
-          : rental
-      ));
-
+      
+      // Update local state
+      const updatedRentals = rentals.map(rental => 
+        rental.id === rentalId ? { ...rental, status: newStatus } : rental
+      );
+      setRentals(updatedRentals);
+      
+      // Apply current filters
+      handleFilter(filterStatus);
+      
       toast({
         title: "Status updated",
-        description: `Rental ${rentalId} status updated to ${newStatus}`,
+        description: `Rental status changed to ${newStatus}`,
       });
     } catch (error) {
       console.error("Error updating rental status:", error);
       toast({
-        title: "Update failed",
+        title: "Error",
         description: "Failed to update rental status",
         variant: "destructive",
       });
     }
   };
-
-  const handleSearch = () => {
-    fetchRentals();
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'waiting_for_payment':
-        return <Badge className="bg-amber-500">Awaiting Payment</Badge>;
-      case 'paid':
-        return <Badge className="bg-green-500">Paid</Badge>;
-      case 'completed':
-        return <Badge className="bg-blue-500">Completed</Badge>;
-      case 'canceled':
-        return <Badge className="bg-red-500">Canceled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
-
-  if (isLoading) {
-    return <div className="container mx-auto py-8 px-4 text-center">Loading...</div>;
+  
+  if (!isLoggedIn) {
+    return (
+      <div className="container mx-auto py-12 px-4 max-w-md">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center">Admin Login</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@borrowbase.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                />
+              </div>
+              <Button 
+                className="w-full" 
+                onClick={handleLogin}
+                disabled={loading}
+              >
+                {loading ? "Logging in..." : "Login"}
+              </Button>
+              
+              <Alert className="mt-4">
+                <AlertTitle>Demo Credentials</AlertTitle>
+                <AlertDescription>
+                  Email: admin@borrowbase.com<br/>
+                  Password: admin123
+                </AlertDescription>
+              </Alert>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
-
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-
+  
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <div className="container mx-auto py-6 px-4">
+      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
       
-      <div className="mb-6 bg-white p-4 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Rental Management</h2>
+      <div className="flex flex-col lg:flex-row gap-6 mb-6">
+        <Card className="flex-1">
+          <CardHeader>
+            <CardTitle>Rentals Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-gray-50 p-4 rounded-md text-center">
+                <p className="text-sm text-gray-500">Total Rentals</p>
+                <p className="text-2xl font-bold">{rentals.length}</p>
+              </div>
+              <div className="bg-amber-50 p-4 rounded-md text-center">
+                <p className="text-sm text-amber-600">Awaiting Payment</p>
+                <p className="text-2xl font-bold text-amber-600">
+                  {rentals.filter(r => r.status === 'waiting_for_payment').length}
+                </p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-md text-center">
+                <p className="text-sm text-green-600">Paid</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {rentals.filter(r => r.status === 'paid').length}
+                </p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-md text-center">
+                <p className="text-sm text-blue-600">Completed</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {rentals.filter(r => r.status === 'completed').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
-          <div className="flex-1">
+        <Card className="lg:max-w-xs">
+          <CardHeader>
+            <CardTitle>Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm text-gray-500">Total Revenue (Paid)</p>
+                <p className="text-2xl font-bold">
+                  £{rentals
+                    .filter(r => r.status === 'paid' || r.status === 'completed')
+                    .reduce((sum, rental) => sum + Number(rental.total_price), 0)
+                    .toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Platform Fees (15%)</p>
+                <p className="text-xl font-medium">
+                  £{(rentals
+                    .filter(r => r.status === 'paid' || r.status === 'completed')
+                    .reduce((sum, rental) => sum + Number(rental.total_price), 0) * 0.15)
+                    .toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Manage Rentals</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="flex-1">
+              <div className="flex gap-2">
+                <Button 
+                  variant={filterStatus === "all" ? "default" : "outline"}
+                  onClick={() => handleFilter('all')}
+                >
+                  All
+                </Button>
+                <Button 
+                  variant={filterStatus === "waiting_for_payment" ? "default" : "outline"}
+                  onClick={() => handleFilter('waiting_for_payment')}
+                  className="bg-amber-500 hover:bg-amber-600"
+                >
+                  Awaiting Payment
+                </Button>
+                <Button 
+                  variant={filterStatus === "paid" ? "default" : "outline"}
+                  onClick={() => handleFilter('paid')}
+                  className="bg-green-500 hover:bg-green-600"
+                >
+                  Paid
+                </Button>
+                <Button 
+                  variant={filterStatus === "completed" ? "default" : "outline"}
+                  onClick={() => handleFilter('completed')}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  Completed
+                </Button>
+              </div>
+            </div>
+            
             <div className="flex gap-2">
               <Input
-                placeholder="Search by rental code..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
+                placeholder="Search by rental code"
+                value={searchCode}
+                onChange={(e) => setSearchCode(e.target.value)}
               />
-              <Button onClick={handleSearch}>
-                <Search className="h-4 w-4 mr-1" />
-                Search
-              </Button>
+              <Button onClick={handleSearch}>Search</Button>
             </div>
+            
+            <Button onClick={fetchRentals} variant="outline">
+              Refresh
+            </Button>
           </div>
           
-          <div className="md:w-64">
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value);
-                setTimeout(() => fetchRentals(), 100);
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  <span>{statusFilter || 'Filter by status'}</span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All statuses</SelectItem>
-                <SelectItem value="waiting_for_payment">Awaiting Payment</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="canceled">Canceled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rental Code</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead>Renter</TableHead>
-                <TableHead>Lender</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rentals.length > 0 ? (
-                rentals.map((rental) => (
-                  <TableRow key={rental.id}>
-                    <TableCell className="font-medium">{rental.rental_code}</TableCell>
-                    <TableCell>{(rental as any).listing?.title || 'Unknown'}</TableCell>
-                    <TableCell>{(rental as any).renter?.email || rental.renter_id}</TableCell>
-                    <TableCell>{(rental as any).seller?.email || rental.seller_id}</TableCell>
-                    <TableCell>
-                      {new Date(rental.start_date).toLocaleDateString()} to {new Date(rental.end_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {rental.currency} {rental.total_price}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(rental.status)}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(rental.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={rental.status}
-                        onValueChange={(value) => updateRentalStatus(rental.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="Update status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="waiting_for_payment">Awaiting Payment</SelectItem>
-                          <SelectItem value="paid">Paid</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="canceled">Canceled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
+          <div className="border rounded-md overflow-auto">
+            <Table>
+              <TableCaption>List of all rentals</TableCaption>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={9} className="h-24 text-center">
-                    No rentals found
-                  </TableCell>
+                  <TableHead>Rental Code</TableHead>
+                  <TableHead>Item</TableHead>
+                  <TableHead>Renter</TableHead>
+                  <TableHead>Lender</TableHead>
+                  <TableHead>Dates</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {filteredRentals.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center">No rentals found</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredRentals.map((rental) => (
+                    <TableRow key={rental.id}>
+                      <TableCell className="font-medium">{rental.rental_code}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {rental.listing?.images?.[0] && (
+                            <img 
+                              src={rental.listing.images[0]} 
+                              alt={rental.listing.title} 
+                              className="w-10 h-10 object-cover rounded"
+                            />
+                          )}
+                          <span>{rental.listing?.title || "Unknown Item"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{rental.renter?.email || "Unknown"}</TableCell>
+                      <TableCell>{rental.seller?.email || "Unknown"}</TableCell>
+                      <TableCell>
+                        {new Date(rental.start_date).toLocaleDateString()} - 
+                        {new Date(rental.end_date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>£{rental.total_price}</TableCell>
+                      <TableCell>
+                        {rental.status === 'waiting_for_payment' && (
+                          <Badge className="bg-amber-500">Awaiting Payment</Badge>
+                        )}
+                        {rental.status === 'paid' && (
+                          <Badge className="bg-green-500">Paid</Badge>
+                        )}
+                        {rental.status === 'completed' && (
+                          <Badge className="bg-blue-500">Completed</Badge>
+                        )}
+                        {rental.status === 'canceled' && (
+                          <Badge className="bg-red-500">Canceled</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {rental.status === 'waiting_for_payment' && (
+                            <Button 
+                              size="sm" 
+                              className="bg-green-500 hover:bg-green-600"
+                              onClick={() => updateRentalStatus(rental.id, 'paid')}
+                            >
+                              Mark Paid
+                            </Button>
+                          )}
+                          {rental.status === 'paid' && (
+                            <Button 
+                              size="sm" 
+                              className="bg-blue-500 hover:bg-blue-600"
+                              onClick={() => updateRentalStatus(rental.id, 'completed')}
+                            >
+                              Mark Completed
+                            </Button>
+                          )}
+                          {rental.status !== 'canceled' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-red-500 border-red-300 hover:bg-red-50"
+                              onClick={() => updateRentalStatus(rental.id, 'canceled')}
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

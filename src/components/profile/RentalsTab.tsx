@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import ListingCard, { ListingProps } from "@/components/ListingCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import MessagingDialog from "@/components/MessagingDialog";
+import { Link } from "react-router-dom";
 
 interface Rental {
   id: string;

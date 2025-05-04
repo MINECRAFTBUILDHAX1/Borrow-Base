@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, ChevronLeft, MapPin, Star, Clock, ShieldCheck, MessageCircle } from "lucide-react";
@@ -219,7 +218,8 @@ const ListingDetails = () => {
     }
     
     try {
-      // Create a new rental record in the database
+      // Create a new rental record in the database with the required rental_code field
+      // The rental_code will be set by the trigger we created
       const { data: rentalData, error } = await supabase
         .from('rentals')
         .insert({
