@@ -140,79 +140,7 @@ const CreateListing = () => {
     setImageUrls(updatedUrls);
   };
 
-  // Use current location
-
-    setLoadingLocation(true);
-    
-    if (!navigator.geolocation) {
-      toast({
-        title: "Error",
-        description: "Geolocation is not supported by your browser",
-        variant: "destructive"
-      });
-      setLoadingLocation(false);
-      return;
-    }
-    
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        
-        try {
-          // Reverse geocode the coordinates to get a human-readable location
-          // For this example, I'm using a simple approach
-          // In a real app, you'd use a geocoding service API
-          
-          // Simulating a location name based on coordinates for now
-          // In a real app, replace this with reverse geocoding API call
-        
-          setLocation(locationName);
-          setLocationDetails({
-            address: locationName,
-            lat,
-            lng
-          });
-          
-          toast({
-            title: "Location set",
-            description: `Using your location: ${locationName}`
-          });
-        } catch (error) {
-          console.error("Error getting location name:", error);
-          toast({
-            title: "Location found",
-            description: "Using your current coordinates"
-          });
-          setLocation(`Location near ${lat.toFixed(2)}, ${lng.toFixed(2)}`);
-        } finally {
-          setLoadingLocation(false);
-        }
-      },
-      (error) => {
-        console.error("Error getting location:", error);
-        toast({
-          title: "Error",
-          description: "Could not get your location. Please enter it manually.",
-          variant: "destructive"
-        });
-        setLoadingLocation(false);
-      }
-    );
-  };
-  
-  // Mock function to get location name from coordinates
-  // In a real app, you'd use a geocoding API like Google Maps or Mapbox
  
-    // Simulating API call delay
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // This is just a placeholder. In a real app, you'd do an actual API call
-        // to reverse geocode the coordinates into a city/neighborhood name
-        resolve("Your current location");
-      }, 500);
-    });
-  };
   
   const nextStep = () => {
     if (currentStep === 1) {
