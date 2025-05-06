@@ -141,7 +141,7 @@ const CreateListing = () => {
   };
 
   // Use current location
-  const getCurrentLocation = () => {
+
     setLoadingLocation(true);
     
     if (!navigator.geolocation) {
@@ -166,8 +166,7 @@ const CreateListing = () => {
           
           // Simulating a location name based on coordinates for now
           // In a real app, replace this with reverse geocoding API call
-          const locationName = await getLocationNameFromCoords(lat, lng);
-          
+        
           setLocation(locationName);
           setLocationDetails({
             address: locationName,
@@ -204,7 +203,7 @@ const CreateListing = () => {
   
   // Mock function to get location name from coordinates
   // In a real app, you'd use a geocoding API like Google Maps or Mapbox
-  const getLocationNameFromCoords = async (lat: number, lng: number): Promise<string> => {
+ 
     // Simulating API call delay
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -489,7 +488,7 @@ const CreateListing = () => {
                     <Button 
                       type="button" 
                       variant="outline" 
-                      onClick={getCurrentLocation}
+                      
                       disabled={loadingLocation}
                     >
                       {loadingLocation ? (
