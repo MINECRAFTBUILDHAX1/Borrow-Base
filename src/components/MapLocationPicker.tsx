@@ -20,27 +20,67 @@ const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128,
   const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   // Load Google Maps API script
-  useEffect(() => {
-    // Skip if the API is already loaded
-    if (window.google?.maps?.places) return;
+useEffect(() => {
+  if (window.google?.maps?.places) {
+    initAutocomplete(); // 👈 trigger directly if already loaded
+    return;
+  }
 
-    const scriptExists = document.getElementById("google-maps-script");
-    if (scriptExists) return;
+  const scriptExists = document.getElementById("google-maps-script");
+  if (scriptExists) return;
 
-    const script = document.createElement("script");
-    script.id = "google-maps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${AIzaSyCM6Ux_KougBeEYkxVQCArnIzA9cdgjYII}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => console.log("Google Maps API loaded");
-    document.head.appendChild(script);
+  const script = document.createElement("script");
+  script.id = "google-maps-script";
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+  script.async = true;
+  script.defer = true;
 
-    return () => {
-      // Cleanup if component unmounts before script loads
-      const script = document.getElementById("google-maps-script");
-      if (script) document.head.removeChild(script);
-    };
-  }, []);
+  script.onload = () => {
+    console.log("Google Maps API loaded");
+    initAutocomplete(); // ✅ init here
+  };
+
+  document.head.appendChild(script);
+
+  return () => {
+    const script = document.getElementById("google-maps-script");
+    if (script) document.head.removeChild(script);
+  };
+}, []);
+const initAutocomplete = () => {
+  if (!window.google?.maps?.places || !autocompleteInputRef.current) return;
+
+  autoCompleteRef.current = new window.google.maps.places.Autocomplete(
+    autocompleteInputRef.current,
+    { types: ["geocode"] }
+  );
+
+  autoCompleteRef.current.addListener("place_changed", () => {
+    const place = autoCompleteRef.current?.getPlace();
+
+    if (!place || !place.geometry?.location) {
+      toast({
+        title: "Error",
+        description: "Please select a location from the dropdown",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    const address = place.formatted_address || locationInput;
+
+    setCurrentPosition({ lat, lng });
+    onLocationSelect({ address, lat, lng });
+
+    toast({
+      title: "Location set",
+      description: `Location set to ${address}`
+    });
+  });
+};
+
 
   // Initialize autocomplete when Google API is loaded
   useEffect(() => {
