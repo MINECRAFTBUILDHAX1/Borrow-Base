@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Camera, Plus, X, AlertCircle, MapPin, Loader2 } from "lucide-react";
+import { Camera, Plus, X, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import Commission from "@/components/Commission";
-import MapLocationPicker from "@/components/MapLocationPicker";
 import { ListingTable } from "@/types/database";
 import { PostgrestResponse } from "@supabase/supabase-js";
 
@@ -61,10 +60,9 @@ const CreateListing = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [loadingImages, setLoadingImages] = useState(false);
-  const [selectedLocationDetails, setSelectedLocationDetails] = useState<any>(null);
-  const [mapApiLoaded, setMapApiLoaded] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [locationDetails, setLocationDetails] = useState<any>(null);
   
   const addFeature = () => {
     setFeatures([...features, ""]);
@@ -140,6 +138,81 @@ const CreateListing = () => {
     
     setImages(updatedImages);
     setImageUrls(updatedUrls);
+  };
+
+  // Use current location
+  const getCurrentLocation = () => {
+    setLoadingLocation(true);
+    
+    if (!navigator.geolocation) {
+      toast({
+        title: "Error",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive"
+      });
+      setLoadingLocation(false);
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        try {
+          // Reverse geocode the coordinates to get a human-readable location
+          // For this example, I'm using a simple approach
+          // In a real app, you'd use a geocoding service API
+          
+          // Simulating a location name based on coordinates for now
+          // In a real app, replace this with reverse geocoding API call
+          const locationName = await getLocationNameFromCoords(lat, lng);
+          
+          setLocation(locationName);
+          setLocationDetails({
+            address: locationName,
+            lat,
+            lng
+          });
+          
+          toast({
+            title: "Location set",
+            description: `Using your location: ${locationName}`
+          });
+        } catch (error) {
+          console.error("Error getting location name:", error);
+          toast({
+            title: "Location found",
+            description: "Using your current coordinates"
+          });
+          setLocation(`Location near ${lat.toFixed(2)}, ${lng.toFixed(2)}`);
+        } finally {
+          setLoadingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast({
+          title: "Error",
+          description: "Could not get your location. Please enter it manually.",
+          variant: "destructive"
+        });
+        setLoadingLocation(false);
+      }
+    );
+  };
+  
+  // Mock function to get location name from coordinates
+  // In a real app, you'd use a geocoding API like Google Maps or Mapbox
+  const getLocationNameFromCoords = async (lat: number, lng: number): Promise<string> => {
+    // Simulating API call delay
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // This is just a placeholder. In a real app, you'd do an actual API call
+        // to reverse geocode the coordinates into a city/neighborhood name
+        resolve("Your current location");
+      }, 500);
+    });
   };
   
   const nextStep = () => {
@@ -245,7 +318,7 @@ const CreateListing = () => {
         price_per_day: parseFloat(pricePerDay),
         security_deposit: securityDeposit ? parseFloat(securityDeposit) : null,
         location,
-        location_details: selectedLocationDetails,
+        location_details: locationDetails,
         features: features.filter(feature => feature.trim() !== ''),
         rules: rules.filter(rule => rule.trim() !== ''),
         images: imageUrls,
@@ -279,27 +352,6 @@ const CreateListing = () => {
       setIsSubmitting(false);
     }
   };
-
-  const openLocationPicker = () => {
-    setShowLocationPicker(true);
-  };
-
-  const handleLocationSelect = (selectedLocation: { address: string; lat: number; lng: number }) => {
-    setLocation(selectedLocation.address);
-    setShowLocationPicker(false);
-    setSelectedLocationDetails(selectedLocation);
-  };
-  
-  // Load the Google Maps API
-  useEffect(() => {
-    // In a real implementation, we would load the Google Maps API here
-    // For now, we'll simulate it being loaded
-    const timer = setTimeout(() => {
-      setMapApiLoaded(true);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
   
   return (
     <div className="container mx-auto py-8 px-4 max-w-3xl">
@@ -407,7 +459,7 @@ const CreateListing = () => {
                   {/* Commission information */}
                   {pricePerDay && parseFloat(pricePerDay) > 0 && (
                     <div className="mt-2">
-                      <Commission variant="compact" listingPrice={parseFloat(pricePerDay)} />
+                      <Commission listingPrice={parseFloat(pricePerDay)} variant="compact" />
                     </div>
                   )}
                 </div>
@@ -434,9 +486,17 @@ const CreateListing = () => {
                       required 
                       className="flex-1"
                     />
-                    <Button type="button" variant="outline" onClick={openLocationPicker}>
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Map
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={getCurrentLocation}
+                      disabled={loadingLocation}
+                    >
+                      {loadingLocation ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Use Current Location"
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -563,7 +623,7 @@ const CreateListing = () => {
 
                 {/* Full commission information */}
                 <div className="mt-6">
-                  <Commission listingPrice={pricePerDay ? parseFloat(pricePerDay) : undefined} />
+                  <Commission listingPrice={pricePerDay ? parseFloat(pricePerDay) : 0} />
                 </div>
               </div>
             )}
@@ -608,29 +668,6 @@ const CreateListing = () => {
             </Button>
             <Button onClick={() => navigate("/auth?tab=register")}>
               Sign Up
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Map Dialog for Location Picking with Google Maps integration */}
-      <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select Location</DialogTitle>
-            <DialogDescription>
-              Choose your location from the map
-            </DialogDescription>
-          </DialogHeader>
-          <div className="h-[300px] bg-gray-100 rounded-md">
-            <MapLocationPicker onLocationSelect={handleLocationSelect} />
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowLocationPicker(false)}
-            >
-              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

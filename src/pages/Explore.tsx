@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Search, Filter, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import CategoryFilter from "@/components/CategoryFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { ListingTable } from "@/types/database";
+import { useToast } from "@/hooks/use-toast";
 
 // Categories data
 const categories = [
@@ -41,6 +43,7 @@ const categories = [
 const Explore = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const { toast } = useToast();
   
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>("recommended");
@@ -50,6 +53,7 @@ const Explore = () => {
   const [priceMax, setPriceMax] = useState<number | undefined>(undefined);
   const [listings, setListings] = useState<ListingProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingLocation, setLoadingLocation] = useState(false);
   
   // Get search parameters from URL on initial load
   useEffect(() => {
@@ -133,7 +137,7 @@ const Explore = () => {
             id: listing.id,
             title: listing.title,
             price: listing.price_per_day || 0,
-            priceUnit: "day" as "day" | "hour" | "week" | "month", // explicitly cast to union type
+            priceUnit: "day" as "day" | "hour" | "week" | "month",
             imageUrl: listing.images && listing.images.length > 0 
               ? listing.images[0] 
               : "https://via.placeholder.com/300x200?text=No+Image",
@@ -182,6 +186,76 @@ const Explore = () => {
       searchParams.delete("category");
     }
     setSearchParams(searchParams);
+  };
+
+  // Get current location for the search
+  const getCurrentLocation = async () => {
+    setLoadingLocation(true);
+    
+    if (!navigator.geolocation) {
+      toast({
+        title: "Error",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive"
+      });
+      setLoadingLocation(false);
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        try {
+          // Simulating a reverse geocoding API call
+          // In a real app, you'd use a geocoding service API
+          const locationName = await getLocationNameFromCoords(lat, lng);
+          
+          setLocationQuery(locationName);
+          
+          toast({
+            title: "Location found",
+            description: `Using your location: ${locationName}`
+          });
+          
+          // Trigger search with the new location
+          handleSearch();
+        } catch (error) {
+          console.error("Error getting location name:", error);
+          toast({
+            title: "Location found",
+            description: "Using your current location"
+          });
+          setLocationQuery("Your current location");
+          handleSearch();
+        } finally {
+          setLoadingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast({
+          title: "Error",
+          description: "Could not get your location. Please enter it manually.",
+          variant: "destructive"
+        });
+        setLoadingLocation(false);
+      }
+    );
+  };
+  
+  // Mock function to get location name from coordinates
+  // In a real app, you'd use a geocoding API like Google Maps or Mapbox
+  const getLocationNameFromCoords = async (lat: number, lng: number): Promise<string> => {
+    // Simulating API call delay
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // This is just a placeholder. In a real app, you'd do an actual API call
+        // to reverse geocode the coordinates into a city/neighborhood name
+        resolve("Your current location");
+      }, 500);
+    });
   };
 
   const handleSearch = () => {
@@ -245,15 +319,29 @@ const Explore = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <div className="relative flex-grow md:max-w-[180px]">
+            <div className="relative flex-grow md:max-w-[240px]">
               <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <Input 
-                className="pl-10 h-12" 
-                placeholder="Location"
-                value={locationQuery}
-                onChange={(e) => setLocationQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
+              <div className="flex">
+                <Input 
+                  className="pl-10 h-12 rounded-r-none" 
+                  placeholder="Location"
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                <Button 
+                  variant="secondary" 
+                  className="h-12 rounded-l-none"
+                  onClick={getCurrentLocation}
+                  disabled={loadingLocation}
+                >
+                  {loadingLocation ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "📍"
+                  )}
+                </Button>
+              </div>
             </div>
             <Button onClick={handleSearch} className="h-12">
               Search

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { default as CommissionComponent } from "@/components/Commission";
+import Commission from "@/components/Commission";
 import PaypalPaymentLink from "@/components/PaypalPaymentLink";
 import { DateRange } from "react-day-picker";
 
@@ -95,40 +94,29 @@ const ListingDetails = () => {
 
       setListingData(listing);
 
-      // Fetch lender details
+      // Fetch lender details from auth directly
       if (listing.user_id) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', listing.user_id)
-          .single();
-
-        if (!error && data) {
-          // Get auth user data to combine with profile
-          const { data: userData } = await supabase.auth.admin.getUserById(listing.user_id);
+        try {
+          const { data, error } = await supabase.auth.admin.getUserById(listing.user_id);
           
-          if (userData && userData.user) {
-            // Combine auth user data with profile data
+          if (error) throw error;
+          
+          if (data && data.user) {
             setLenderData({
-              id: userData.user.id,
-              email: userData.user.email || '',
-              user_metadata: userData.user.user_metadata,
-              created_at: userData.user.created_at
+              id: data.user.id,
+              email: data.user.email || '',
+              user_metadata: data.user.user_metadata,
+              created_at: data.user.created_at
             });
           }
-        } else {
-          console.error("Error fetching lender profile:", error);
-          // Fallback to just auth data if profile not found
-          const { data: userData } = await supabase.auth.admin.getUserById(listing.user_id);
-          
-          if (userData && userData.user) {
-            setLenderData({
-              id: userData.user.id,
-              email: userData.user.email || '',
-              user_metadata: userData.user.user_metadata,
-              created_at: userData.user.created_at
-            });
-          }
+        } catch (error) {
+          console.error("Error fetching lender data:", error);
+          // Fallback to minimal lender data
+          setLenderData({
+            id: listing.user_id,
+            email: '',
+            created_at: new Date().toISOString()
+          });
         }
       }
     } catch (error: any) {
@@ -266,7 +254,7 @@ const ListingDetails = () => {
                 <strong>Price per day:</strong> £{listingData.price_per_day}
               </p>
               
-              <CommissionComponent listingPrice={listingData.price_per_day} />
+              <Commission listingPrice={listingData.price_per_day} />
             </div>
           </div>
 

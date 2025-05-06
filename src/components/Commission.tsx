@@ -1,13 +1,22 @@
 
 import React from 'react';
 
-interface CommissionProps {
+export interface CommissionProps {
   listingPrice: number;
+  variant?: 'default' | 'compact';
 }
 
-const Commission: React.FC<CommissionProps> = ({ listingPrice }) => {
+const Commission: React.FC<CommissionProps> = ({ listingPrice, variant = 'default' }) => {
   const serviceFee = listingPrice * 0.15;
   const earnings = listingPrice - serviceFee;
+
+  if (variant === 'compact') {
+    return (
+      <p className="text-xs text-gray-500">
+        After BorrowBase's 15% fee, you'll earn £{earnings.toFixed(2)}/day
+      </p>
+    );
+  }
 
   return (
     <div className="bg-gray-50 p-3 rounded-md border border-gray-200 mt-3">
