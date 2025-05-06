@@ -402,45 +402,19 @@ const CreateListing = () => {
                   />
                 </div>
                 
-      import React, { useState } from 'react';
-import ReactGooglePlacesAutocomplete from 'react-google-places-autocomplete';
-
-const LocationInput = () => {
-  const [address, setAddress] = useState<any>(null);
-
-  const handleSelect = (selectedAddress: any) => {
-    // Handle the address selection
-    setAddress(selectedAddress);
-    console.log(selectedAddress);
-  };
-
-  return (
-    <div>
-      <h2>Enter a location</h2>
-      <ReactGooglePlacesAutocomplete
-        apiKey="AIzaSyCM6Ux_KougBeEYkxVQCArnIzA9cdgjYII" // Replace with your Google Places API key
-        selectProps={{
-          address,
-          onChange: setAddress,
-          onSelect: handleSelect,
-          placeholder: "Type a location...",
-        }}
-      />
-      <div>
-        {address ? (
-          <div>
-            <p>Selected Address: {address.label}</p>
-          </div>
-        ) : (
-          <p>No address selected</p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default LocationInput;
-
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location *</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      id="location" 
+                      placeholder="Enter your city or neighborhood" 
+                      value={location} 
+                      onChange={e => setLocation(e.target.value)} 
+                      required 
+                      className="flex-1"
+                    />
+                   
+                  </div>
                 </div>
               </div>
             )}
