@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,16 +42,22 @@ const Analytics = () => {
     fetchRentals();
   }, [user]);
 
+  // Calculate total revenue (85% of rental price for completed rentals where user is seller)
   const totalRevenue = rentals
-    .filter(rental => rental.status === 'completed')
-    .reduce((sum, rental) => sum + rental.total_price, 0);
+    .filter(rental => rental.status === 'completed' && rental.seller_id === user?.id)
+    .reduce((sum, rental) => sum + (rental.total_price * 0.85), 0);
 
   const pendingRevenue = rentals
-    .filter(rental => rental.status === 'waiting_for_payment')
-    .reduce((sum, rental) => sum + rental.total_price, 0);
+    .filter(rental => rental.status === 'waiting_for_payment' && rental.seller_id === user?.id)
+    .reduce((sum, rental) => sum + (rental.total_price * 0.85), 0);
 
-  const completedRentals = rentals.filter(rental => rental.status === 'completed').length;
-  const pendingRentals = rentals.filter(rental => rental.status === 'waiting_for_payment').length;
+  const completedRentals = rentals.filter(
+    rental => rental.status === 'completed' && rental.seller_id === user?.id
+  ).length;
+  
+  const pendingRentals = rentals.filter(
+    rental => rental.status === 'waiting_for_payment' && rental.seller_id === user?.id
+  ).length;
 
   const avgRentalValue = completedRentals > 0 ? totalRevenue / completedRentals : 0;
 
@@ -92,14 +99,15 @@ const Analytics = () => {
               <TableHead>Item</TableHead>
               <TableHead>Renter</TableHead>
               <TableHead>Dates</TableHead>
-              <TableHead>Amount</TableHead>
+              <TableHead>Total Amount</TableHead>
+              <TableHead>Your Earnings</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rentals.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">No rentals found</TableCell>
+                <TableCell colSpan={7} className="text-center">No rentals found</TableCell>
               </TableRow>
             ) : (
               rentals.map((rental) => (
@@ -111,7 +119,12 @@ const Analytics = () => {
                     {new Date(rental.start_date).toLocaleDateString()} -
                     {new Date(rental.end_date).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="font-medium">£{rental.total_price.toFixed(2)}</TableCell>
+                  <TableCell>£{rental.total_price.toFixed(2)}</TableCell>
+                  <TableCell className="font-medium">
+                    {rental.seller_id === user?.id ? 
+                      `£${(rental.total_price * 0.85).toFixed(2)}` : 
+                      "N/A"}
+                  </TableCell>
                   <TableCell>{rental.status}</TableCell>
                 </TableRow>
               ))

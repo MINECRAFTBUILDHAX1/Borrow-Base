@@ -52,12 +52,9 @@ const HelpCenter = () => {
             Can't find the answer you're looking for? Our support team is here to help.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="px-4 py-2 bg-brand-purple text-white rounded hover:bg-brand-purple/90">
+            <a href="mailto:mmajcherczykolczak@gmail.com" className="px-4 py-2 bg-brand-purple text-white rounded hover:bg-brand-purple/90">
               Email Support
-            </button>
-            <button className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50">
-              Live Chat
-            </button>
+            </a>
           </div>
           <p className="mt-4 text-sm text-gray-600">
             Support hours: Monday-Friday, 9am-5pm GMT

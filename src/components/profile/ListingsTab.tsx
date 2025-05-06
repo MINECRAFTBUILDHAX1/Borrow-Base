@@ -17,7 +17,7 @@ const ListingsTab = ({ listings: initialListings, userName, isOwnProfile, userId
   const [listings, setListings] = useState<ListingProps[]>(initialListings);
   const { toast } = useToast();
   
-  // Fetch actual listings from Supabase
+  // Fetch actual listings from Supabase for this specific user
   useEffect(() => {
     const fetchListings = async () => {
       try {
