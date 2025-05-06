@@ -29,7 +29,7 @@ const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128,
 
     const script = document.createElement("script");
     script.id = "google-maps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${AIzaSyCM6Ux_KougBeEYkxVQCArnIzA9cdgjYII}&libraries=places`;
     script.async = true;
     script.defer = true;
     script.onload = () => console.log("Google Maps API loaded");
