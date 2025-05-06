@@ -402,19 +402,56 @@ const CreateListing = () => {
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location *</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      id="location" 
-                      placeholder="Enter your city or neighborhood" 
-                      value={location} 
-                      onChange={e => setLocation(e.target.value)} 
-                      required 
-                      className="flex-1"
-                    />
-                   
-                  </div>
+          import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
+import { useState, useRef } from 'react';
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+
+const libraries: ("places")[] = ["places"];
+
+export default function LocationInput() {
+  const [location, setLocation] = useState('');
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: 'AIzaSyCM6Ux_KougBeEYkxVQCArnIzA9cdgjYII', // 🔑 Replace this with your real API key
+    libraries,
+  });
+
+  const handlePlaceChanged = () => {
+    const place = autocompleteRef.current?.getPlace();
+    if (place && place.formatted_address) {
+      setLocation(place.formatted_address);
+    } else if (place?.name) {
+      setLocation(place.name);
+    }
+  };
+
+  if (loadError) return <div>Failed to load Maps</div>;
+  if (!isLoaded) return <div>Loading...</div>;
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="location">Location *</Label>
+      <div className="flex gap-2">
+        <Autocomplete
+          onLoad={ref => (autocompleteRef.current = ref)}
+          onPlaceChanged={handlePlaceChanged}
+        >
+          <Input
+            id="location"
+            placeholder="Enter your city or neighborhood"
+            value={location}
+            onChange={e => setLocation(e.target.value)}
+            required
+            className="flex-1"
+          />
+        </Autocomplete>
+      </div>
+    </div>
+  );
+}
+
                 </div>
               </div>
             )}
