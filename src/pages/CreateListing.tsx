@@ -413,18 +413,7 @@ const CreateListing = () => {
                       required 
                       className="flex-1"
                     />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      
-                      disabled={loadingLocation}
-                    >
-                      {loadingLocation ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Use Current Location"
-                      )}
-                    </Button>
+                   
                   </div>
                 </div>
               </div>
