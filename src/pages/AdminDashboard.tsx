@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 
 // Admin login credentials - hardcoded for now, in a real app these would be in a database
-const ADMIN_EMAIL = "admin@borrowbase.com";
+const ADMIN_EMAIL = "admin@borrowbase.co.uk";
 const ADMIN_PASSWORD = "admin123";
 
 const AdminDashboard = () => {
@@ -183,7 +183,7 @@ const AdminDashboard = () => {
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@borrowbase.com"
+                  placeholder="admin@borrowbase.co.uk"
                 />
               </div>
               <div className="space-y-2">
@@ -207,7 +207,7 @@ const AdminDashboard = () => {
               <Alert className="mt-4">
                 <AlertTitle>Demo Credentials</AlertTitle>
                 <AlertDescription>
-                  Email: admin@borrowbase.com<br/>
+                  Email: admin@borrowbase.co.uk<br/>
                   Password: admin123
                 </AlertDescription>
               </Alert>

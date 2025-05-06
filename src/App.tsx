@@ -19,6 +19,19 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Layout from "./components/Layout";
 import ProfileComplete from "./components/ProfileComplete";
 
+// Import footer page routes
+import AboutUs from "./pages/AboutUs";
+import HowItWorks from "./pages/HowItWorks";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Careers from "./pages/Careers";
+import Press from "./pages/Press";
+import HelpCenter from "./pages/HelpCenter";
+import SafetyInfo from "./pages/SafetyInfo";
+import Cancellation from "./pages/Cancellation";
+import Insurance from "./pages/Insurance";
+import CookiePolicy from "./pages/CookiePolicy";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -40,6 +53,20 @@ const App = () => (
               <Route path="/settings" element={<Settings />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              
+              {/* Footer Pages */}
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/press" element={<Press />} />
+              <Route path="/help-center" element={<HelpCenter />} />
+              <Route path="/safety" element={<SafetyInfo />} />
+              <Route path="/cancellation" element={<Cancellation />} />
+              <Route path="/insurance" element={<Insurance />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
+              
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
