@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, Filter, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { ListingTable } from "@/types/database";
 import { useToast } from "@/hooks/use-toast";
+import { GOOGLE_MAPS_API_KEY } from "@/config/api-keys";
 
 // Categories data
 const categories = [
@@ -54,6 +55,63 @@ const Explore = () => {
   const [listings, setListings] = useState<ListingProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  
+  // Load Google Maps API script
+  useEffect(() => {
+    // Skip if the API is already loaded
+    if (window.google?.maps?.places) return;
+    
+    const scriptExists = document.getElementById("google-maps-script");
+    if (scriptExists) return;
+    
+    const script = document.createElement("script");
+    script.id = "google-maps-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+    
+    return () => {
+      // Cleanup if component unmounts before script loads
+      const script = document.getElementById("google-maps-script");
+      if (script) document.head.removeChild(script);
+    };
+  }, []);
+
+  // Initialize Places Autocomplete
+  useEffect(() => {
+    if (!window.google?.maps?.places || !locationInputRef.current) return;
+    
+    try {
+      autoCompleteRef.current = new window.google.maps.places.Autocomplete(
+        locationInputRef.current,
+        { types: ["geocode"] }
+      );
+      
+      autoCompleteRef.current.addListener("place_changed", () => {
+        if (!autoCompleteRef.current) return;
+        
+        const place = autoCompleteRef.current.getPlace();
+        
+        if (!place.geometry || !place.geometry.location) {
+          toast({
+            title: "Error",
+            description: "Please select a location from the dropdown",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        const address = place.formatted_address || locationInputRef.current?.value || "";
+        setLocationQuery(address);
+        handleSearch();
+      });
+    } catch (error) {
+      console.error("Error initializing Google Places Autocomplete:", error);
+    }
+  }, [toast]);
   
   // Get search parameters from URL on initial load
   useEffect(() => {
@@ -208,19 +266,40 @@ const Explore = () => {
         const lng = position.coords.longitude;
         
         try {
-          // Simulating a reverse geocoding API call
-          // In a real app, you'd use a geocoding service API
-          const locationName = await getLocationNameFromCoords(lat, lng);
+          // Use Google Maps Geocoding API to get address from coordinates
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+          );
           
-          setLocationQuery(locationName);
+          const data = await response.json();
           
-          toast({
-            title: "Location found",
-            description: `Using your location: ${locationName}`
-          });
-          
-          // Trigger search with the new location
-          handleSearch();
+          if (data.status === "OK" && data.results && data.results.length > 0) {
+            // Find locality (city) and administrative_area_level_1 (state)
+            let city = "";
+            let state = "";
+            
+            for (const component of data.results[0].address_components) {
+              if (component.types.includes("locality")) {
+                city = component.long_name;
+              }
+              if (component.types.includes("administrative_area_level_1")) {
+                state = component.long_name;
+              }
+            }
+            
+            const formattedAddress = city && state ? `${city}, ${state}` : data.results[0].formatted_address;
+            setLocationQuery(formattedAddress);
+            
+            toast({
+              title: "Location found",
+              description: `Using your location: ${formattedAddress}`
+            });
+            
+            // Trigger search with the new location
+            handleSearch();
+          } else {
+            throw new Error("Could not determine address from coordinates");
+          }
         } catch (error) {
           console.error("Error getting location name:", error);
           toast({
@@ -243,19 +322,6 @@ const Explore = () => {
         setLoadingLocation(false);
       }
     );
-  };
-  
-  // Mock function to get location name from coordinates
-  // In a real app, you'd use a geocoding API like Google Maps or Mapbox
-  const getLocationNameFromCoords = async (lat: number, lng: number): Promise<string> => {
-    // Simulating API call delay
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // This is just a placeholder. In a real app, you'd do an actual API call
-        // to reverse geocode the coordinates into a city/neighborhood name
-        resolve("Your current location");
-      }, 500);
-    });
   };
 
   const handleSearch = () => {
@@ -328,6 +394,7 @@ const Explore = () => {
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  ref={locationInputRef}
                 />
                 <Button 
                   variant="secondary" 

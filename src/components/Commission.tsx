@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-export interface CommissionProps {
+interface CommissionProps {
   listingPrice: number;
   variant?: 'default' | 'compact';
 }
