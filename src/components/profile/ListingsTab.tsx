@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface ListingsTabProps {
   listings: ListingProps[];
@@ -15,11 +16,13 @@ interface ListingsTabProps {
 
 const ListingsTab = ({ listings: initialListings, userName, isOwnProfile, userId }: ListingsTabProps) => {
   const [listings, setListings] = useState<ListingProps[]>(initialListings);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
   // Fetch listings from Supabase for this specific user
   useEffect(() => {
     const fetchListings = async () => {
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('listings')
@@ -51,6 +54,8 @@ const ListingsTab = ({ listings: initialListings, userName, isOwnProfile, userId
           description: "Failed to load listings data",
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -62,20 +67,30 @@ const ListingsTab = ({ listings: initialListings, userName, isOwnProfile, userId
   return (
     <>
       <h2 className="text-xl font-semibold mb-4">
-        {listings.length > 0 
-          ? `${userName}'s Items (${listings.length})`
-          : "No items listed yet"}
+        {isLoading ? (
+          <span>Loading listings...</span>
+        ) : listings.length > 0 ? (
+          `${userName}'s Items (${listings.length})`
+        ) : (
+          "No items listed yet"
+        )}
       </h2>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {listings.map((listing: ListingProps) => (
-          <ListingCard 
-            key={listing.id} 
-            {...listing}
-            userId={userId}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-purple" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {listings.map((listing: ListingProps) => (
+            <ListingCard 
+              key={listing.id} 
+              {...listing}
+              userId={userId}
+            />
+          ))}
+        </div>
+      )}
       
       {isOwnProfile && (
         <div className="mt-8 text-center">

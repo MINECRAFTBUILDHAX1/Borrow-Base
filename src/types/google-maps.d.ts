@@ -8,6 +8,7 @@ declare global {
             input: HTMLInputElement,
             options?: google.maps.places.AutocompleteOptions
           ) => google.maps.places.Autocomplete;
+          AutocompleteService: new () => google.maps.places.AutocompleteService;
         };
         Geocoder: new () => google.maps.Geocoder;
       };
@@ -72,6 +73,42 @@ declare namespace google.maps {
       getPlace(): PlaceResult;
     }
 
+    class AutocompleteService {
+      getPlacePredictions(
+        request: {
+          input: string;
+          componentRestrictions?: { country: string | string[] };
+          types?: string[];
+        },
+        callback: (
+          predictions: AutocompletePrediction[],
+          status: PlacesServiceStatus
+        ) => void
+      ): void;
+    }
+
+    interface AutocompletePrediction {
+      description: string;
+      matched_substrings: Array<{
+        length: number;
+        offset: number;
+      }>;
+      place_id: string;
+      structured_formatting: {
+        main_text: string;
+        main_text_matched_substrings: Array<{
+          length: number;
+          offset: number;
+        }>;
+        secondary_text: string;
+      };
+      terms: Array<{
+        offset: number;
+        value: string;
+      }>;
+      types: string[];
+    }
+
     interface PlaceResult {
       address_components?: {
         long_name: string;
@@ -92,6 +129,8 @@ declare namespace google.maps {
       place_id?: string;
       types?: string[];
     }
+
+    type PlacesServiceStatus = 'OK' | 'ZERO_RESULTS' | 'OVER_QUERY_LIMIT' | 'REQUEST_DENIED' | 'INVALID_REQUEST' | 'UNKNOWN_ERROR';
   }
 }
 

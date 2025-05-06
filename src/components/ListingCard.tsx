@@ -33,7 +33,7 @@ const ListingCard = ({
 }: ListingProps) => {
   return (
     <Link to={`/listing/${id}`}>
-      <Card className="overflow-hidden border-none card-shadow h-full">
+      <Card className="overflow-hidden border hover:shadow-md transition-shadow duration-200 h-full">
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
             src={imageUrl}
@@ -44,8 +44,8 @@ const ListingCard = ({
             {category}
           </Badge>
         </div>
-        <CardContent className="p-3">
-          <div className="flex justify-between items-start">
+        <CardContent className="p-4">
+          <div className="flex justify-between items-start mb-2">
             <h3 className="font-medium text-gray-900 line-clamp-1">{title}</h3>
             <div className="flex items-center gap-1 text-sm">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -53,12 +53,12 @@ const ListingCard = ({
               <span className="text-gray-500">({reviewCount})</span>
             </div>
           </div>
-          <p className="text-gray-500 text-sm mt-1">{location}</p>
-          {distance && (
-            <p className="text-gray-500 text-xs mt-1">{distance < 1 ? `${(distance * 1000).toFixed(0)}m away` : `${distance.toFixed(1)}km away`}</p>
+          <p className="text-gray-500 text-sm mb-1">{location}</p>
+          {distance !== undefined && (
+            <p className="text-gray-500 text-xs mb-2">{distance < 1 ? `${(distance * 1000).toFixed(0)}m away` : `${distance.toFixed(1)}km away`}</p>
           )}
-          <p className="font-semibold mt-2">
-            £{price}<span className="font-normal text-gray-500">/{priceUnit}</span>
+          <p className="font-semibold mt-2 text-lg">
+            £{price}<span className="font-normal text-gray-500 text-sm">/{priceUnit}</span>
           </p>
         </CardContent>
       </Card>

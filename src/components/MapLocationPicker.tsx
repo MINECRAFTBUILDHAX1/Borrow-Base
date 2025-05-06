@@ -89,7 +89,7 @@ const MapLocationPicker = ({ onLocationSelect, defaultLocation = { lat: 40.7128,
     if (!locationInput) {
       toast({
         title: "Error",
-        description: "Please enter a city or neighborhood",
+        description: "Please enter your city or neighborhood",
         variant: "destructive"
       });
       return;
