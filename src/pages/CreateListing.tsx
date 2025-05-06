@@ -382,25 +382,7 @@ const CreateListing = () => {
                     onChange={e => setPricePerDay(e.target.value)} 
                     required 
                   />
-                  import { useRef } from "react"; // already imported, just a reminder
-
-const locationInputRef = useRef<HTMLInputElement>(null);
-
-useEffect(() => {
-  if (!window.google || !locationInputRef.current) return;
-
-  const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current, {
-    types: ["geocode"],
-    componentRestrictions: { country: "gb" }, // optional: restrict to UK
-  });
-
-  autocomplete.addListener("place_changed", () => {
-    const place = autocomplete.getPlace();
-    setLocation(place.formatted_address || "");
-    setLocationDetails(place);
-  });
-}, [locationInputRef.current]);
-
+                  
                   {/* Commission information */}
                   {pricePerDay && parseFloat(pricePerDay) > 0 && (
                     <div className="mt-2">
@@ -420,17 +402,19 @@ useEffect(() => {
                   />
                 </div>
                 
-           <div className="space-y-4">
-  <Label htmlFor="location">Location</Label>
-  <Input
-    id="location"
-    ref={locationInputRef}
-    placeholder="Enter your city of neighborhood..."
-    value={location}
-    onChange={(e) => setLocation(e.target.value)}
-  />
-</div>
-
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location *</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      id="location" 
+                      placeholder="Enter your city or neighborhood" 
+                      value={location} 
+                      onChange={e => setLocation(e.target.value)} 
+                      required 
+                      className="flex-1"
+                    />
+                   
+                  </div>
                 </div>
               </div>
             )}
