@@ -110,18 +110,20 @@ const ListingDetails = () => {
 
     try {
       // Create a rental record
+      const rentalCode = generateRentalCode();
+      
       const { data: rental, error } = await supabase
         .from('rentals')
         .insert({
           listing_id: listing.id,
           renter_id: user.id,
           seller_id: listing.user_id,
-          start_date: startDate,
-          end_date: endDate,
+          start_date: startDate?.toISOString(),
+          end_date: endDate?.toISOString(),
           total_price: totalPrice,
           currency: "GBP",
           status: "waiting_for_payment",
-          rental_code: generateRentalCode() // Add the rental code
+          rental_code: rentalCode
         })
         .select('id')
         .single();

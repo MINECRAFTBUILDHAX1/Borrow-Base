@@ -29,14 +29,22 @@ declare global {
   }
 }
 
-const LocationInput = ({ 
-  onLocationSelected,
-  placeholder = "Enter your location"
-}: { 
+interface LocationInputProps {
   onLocationSelected?: (location: { address: string; lat: number; lng: number }) => void;
   placeholder?: string;
-}) => {
-  const [location, setLocation] = useState("");
+  value?: string;
+  onChange?: (address: string, details?: { lat: number; lng: number }) => void;
+  className?: string;
+}
+
+const LocationInput = ({ 
+  onLocationSelected,
+  placeholder = "Enter your location",
+  value,
+  onChange,
+  className = ""
+}: LocationInputProps) => {
+  const [location, setLocation] = useState(value || "");
   const [locationDetails, setLocationDetails] = useState<{
     address: string;
     lat: number;
@@ -44,6 +52,13 @@ const LocationInput = ({
   } | null>(null);
 
   const locationInputRef = useRef<HTMLInputElement>(null);
+
+  // Update internal state when value prop changes
+  useEffect(() => {
+    if (value !== undefined) {
+      setLocation(value);
+    }
+  }, [value]);
 
   useEffect(() => {
     // Check if Google Maps script is already loaded
@@ -87,8 +102,21 @@ const LocationInput = ({
         if (onLocationSelected) {
           onLocationSelected(details);
         }
+
+        if (onChange) {
+          onChange(address, { lat, lng });
+        }
       }
     });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setLocation(newValue);
+    
+    if (onChange) {
+      onChange(newValue);
+    }
   };
 
   return (
@@ -98,8 +126,8 @@ const LocationInput = ({
         type="text"
         placeholder={placeholder}
         value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        className="w-full"
+        onChange={handleInputChange}
+        className={`w-full ${className}`}
       />
 
       {locationDetails && (

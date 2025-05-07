@@ -67,10 +67,10 @@ const MapLocationPicker = ({
             <Label htmlFor="location">City or Neighborhood</Label>
             <div className="flex gap-2 mt-1">
               <LocationInput
-                value={locationInput}
-                onChange={handleLocationChange}
                 placeholder="e.g. London, Camden"
                 className="flex-1"
+                value={locationInput}
+                onChange={handleLocationChange}
               />
               <Button onClick={handleManualLocationSubmit}>
                 Set Location

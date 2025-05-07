@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SearchIcon, Loader2 } from "lucide-react";
@@ -180,10 +179,9 @@ const Index = () => {
               </div>
               <div className="relative flex-grow">
                 <LocationInput 
+                  placeholder="Location"
                   value={locationQuery}
                   onChange={handleLocationChange}
-                  placeholder="Location"
-                  className="h-12"
                 />
               </div>
               <Button size="lg" className="h-12" onClick={handleSearch}>

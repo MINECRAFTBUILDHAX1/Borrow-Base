@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Search, Filter, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -341,10 +340,9 @@ const Explore = () => {
             </div>
             <div className="relative flex-grow md:max-w-[240px]">
               <LocationInput 
+                placeholder="Location"
                 value={locationQuery}
                 onChange={handleLocationChange}
-                placeholder="Location"
-                className="h-12"
               />
             </div>
             <Button onClick={handleSearch} className="h-12">
