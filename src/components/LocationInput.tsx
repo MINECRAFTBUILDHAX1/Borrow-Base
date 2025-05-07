@@ -127,7 +127,7 @@ const LocationInput = ({
         placeholder={placeholder}
         value={location}
         onChange={handleInputChange}
-        className={`w-full ${className}`}
+        className={`w-full text-gray-900 ${className}`}
       />
 
       {locationDetails && (

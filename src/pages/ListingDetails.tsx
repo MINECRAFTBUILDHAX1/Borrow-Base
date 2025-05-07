@@ -49,16 +49,10 @@ const ListingDetails = () => {
       
       try {
         setIsLoading(true);
+        // Fix the relationship query to properly join with user_profiles
         const { data, error } = await supabase
           .from('listings')
-          .select(`
-            *,
-            user_profiles:user_id (
-              username, 
-              avatar_url,
-              full_name
-            )
-          `)
+          .select('*, user_profiles(username, avatar_url, full_name)')
           .eq('id', id)
           .single();
           
@@ -67,8 +61,9 @@ const ListingDetails = () => {
         if (data) {
           setListing(data);
           setSellerProfile(data.user_profiles);
+          console.log("Listing data:", data);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching listing:", error);
         toast({
           title: "Error",
