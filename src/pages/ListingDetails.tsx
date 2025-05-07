@@ -23,9 +23,10 @@ const ListingDetails = () => {
       
       try {
         setIsLoading(true);
+        // Remove the join with user_profiles since that relationship doesn't exist
         const { data, error } = await supabase
           .from('listings')
-          .select('*, user_profiles(username, avatar_url, full_name)')
+          .select('*')
           .eq('id', id)
           .single();
           
@@ -33,7 +34,8 @@ const ListingDetails = () => {
         
         if (data) {
           setListing(data);
-          setSellerProfile(data.user_profiles);
+          // Since we don't have user_profiles, let's set a default seller profile
+          setSellerProfile({ username: "User" });
           console.log("Listing data:", data);
         }
       } catch (error: any) {
