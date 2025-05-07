@@ -1,96 +1,112 @@
 
-import { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { MapPin } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { GOOGLE_MAPS_API_KEY } from "@/config/api-keys";
 
-interface LocationInputProps {
-  value: string;
-  onChange: (location: string, details?: { lat: number; lng: number }) => void;
-  placeholder?: string;
-  className?: string;
+// Add the Google Maps types
+declare global {
+  interface Window {
+    google: {
+      maps: {
+        places: {
+          Autocomplete: new (
+            input: HTMLInputElement,
+            options?: { types?: string[] }
+          ) => {
+            addListener: (event: string, callback: () => void) => void;
+            getPlace: () => {
+              formatted_address?: string;
+              geometry?: {
+                location: {
+                  lat: () => number;
+                  lng: () => number;
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  }
 }
 
-const LocationInput = ({ value, onChange, placeholder = "Enter location", className = "" }: LocationInputProps) => {
-  const { toast } = useToast();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  
-  // Load Google Maps API script
+const LocationInput = ({ 
+  onLocationSelected,
+  placeholder = "Enter your location"
+}: { 
+  onLocationSelected?: (location: { address: string; lat: number; lng: number }) => void;
+  placeholder?: string;
+}) => {
+  const [location, setLocation] = useState("");
+  const [locationDetails, setLocationDetails] = useState<{
+    address: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  const locationInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    if (window.google?.maps?.places) {
-      initAutocomplete();
-      return;
+    // Check if Google Maps script is already loaded
+    const googleMapsLoaded = typeof window.google !== "undefined" && 
+                             typeof window.google.maps !== "undefined" && 
+                             typeof window.google.maps.places !== "undefined";
+    
+    if (googleMapsLoaded && locationInputRef.current) {
+      initializeAutocomplete();
+    } else {
+      // Load Google Maps script if not already loaded
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCM6Ux_KougBeEYkxVQCArnIzA9cdgjYII&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeAutocomplete;
+      document.body.appendChild(script);
     }
-
-    const scriptExists = document.getElementById("google-maps-script");
-    if (scriptExists) return;
-
-    const script = document.createElement("script");
-    script.id = "google-maps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-
-    script.onload = () => {
-      console.log("Google Maps API loaded");
-      initAutocomplete();
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      const script = document.getElementById("google-maps-script");
-      if (script) document.head.removeChild(script);
-    };
   }, []);
 
-  const initAutocomplete = () => {
-    if (!window.google?.maps?.places || !inputRef.current) return;
+  const initializeAutocomplete = () => {
+    if (!locationInputRef.current) return;
     
-    try {
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(
-        inputRef.current,
-        { types: ["geocode"] }
-      );
+    const autocomplete = new window.google.maps.places.Autocomplete(
+      locationInputRef.current,
+      { types: ["geocode"] }
+    );
+
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      const address = place.formatted_address || "";
       
-      autocompleteRef.current.addListener("place_changed", () => {
-        if (!autocompleteRef.current) return;
-        
-        const place = autocompleteRef.current.getPlace();
-        
-        if (!place.geometry || !place.geometry.location) {
-          toast({
-            title: "Error",
-            description: "Please select a location from the dropdown",
-            variant: "destructive"
-          });
-          return;
-        }
-        
+      if (place.geometry && place.geometry.location) {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
-        const address = place.formatted_address || value;
+        const details = { address, lat, lng };
         
-        onChange(address, { lat, lng });
-      });
-    } catch (error) {
-      console.error("Error initializing Google Places Autocomplete:", error);
-    }
+        setLocation(address);
+        setLocationDetails(details);
+        
+        if (onLocationSelected) {
+          onLocationSelected(details);
+        }
+      }
+    });
   };
 
   return (
-    <div className={`relative ${className}`}>
-      <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+    <div className="space-y-2">
       <Input
-        ref={inputRef}
+        ref={locationInputRef}
         type="text"
-        className="pl-10"
         placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        className="w-full"
       />
+
+      {locationDetails && (
+        <div className="text-sm text-muted-foreground">
+          📍 {locationDetails.address}
+        </div>
+      )}
     </div>
   );
 };
