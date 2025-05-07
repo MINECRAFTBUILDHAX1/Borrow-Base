@@ -9,6 +9,7 @@ declare global {
             options?: google.maps.places.AutocompleteOptions
           ) => google.maps.places.Autocomplete;
           AutocompleteService: new () => google.maps.places.AutocompleteService;
+          PlacesServiceStatus: google.maps.places.PlacesServiceStatus;
         };
         Geocoder: new () => google.maps.Geocoder;
       };
@@ -71,6 +72,7 @@ declare namespace google.maps {
     class Autocomplete {
       addListener(eventName: string, handler: () => void): void;
       getPlace(): PlaceResult;
+      bindTo(key: string, target: any): void;
     }
 
     class AutocompleteService {

@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Commission from "@/components/Commission";
 import { ListingTable } from "@/types/database";
 import { PostgrestResponse } from "@supabase/supabase-js";
+import LocationInput from "@/components/LocationInput";
 
 const categories = [
   { id: "tools", name: "Tools" },
@@ -404,17 +405,16 @@ const CreateListing = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="location">Location *</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      id="location" 
-                      placeholder="Enter your city or neighborhood" 
-                      value={location} 
-                      onChange={e => setLocation(e.target.value)} 
-                      required 
-                      className="flex-1"
-                    />
-                   
-                  </div>
+                  <LocationInput 
+                    value={location}
+                    onChange={(value, details) => {
+                      setLocation(value);
+                      if (details) {
+                        setLocationDetails({ lat: details.lat, lng: details.lng });
+                      }
+                    }}
+                    placeholder="Enter your city or neighborhood"
+                  />
                 </div>
               </div>
             )}

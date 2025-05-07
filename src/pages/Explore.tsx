@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Search, Filter, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -80,38 +79,15 @@ const Explore = () => {
     };
   }, []);
 
-  // Initialize Places Autocomplete
-  useEffect(() => {
-    if (!window.google?.maps?.places || !locationInputRef.current) return;
-    
-    try {
-      autoCompleteRef.current = new window.google.maps.places.Autocomplete(
-        locationInputRef.current,
-        { types: ["geocode"] }
-      );
-      
-      autoCompleteRef.current.addListener("place_changed", () => {
-        if (!autoCompleteRef.current) return;
-        
-        const place = autoCompleteRef.current.getPlace();
-        
-        if (!place.geometry || !place.geometry.location) {
-          toast({
-            title: "Error",
-            description: "Please select a location from the dropdown",
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        const address = place.formatted_address || locationInputRef.current?.value || "";
-        setLocationQuery(address);
-        handleSearch();
-      });
-    } catch (error) {
-      console.error("Error initializing Google Places Autocomplete:", error);
+  // Initialize Places Autocomplete - Replace with LocationInput component
+  const handleLocationChange = (address: string, details?: { lat: number; lng: number }) => {
+    setLocationQuery(address);
+    if (details) {
+      // Use the coordinates if needed
+      console.log("Selected coordinates:", details);
+      handleSearch();
     }
-  }, [toast]);
+  };
   
   // Get search parameters from URL on initial load
   useEffect(() => {
@@ -386,29 +362,12 @@ const Explore = () => {
               />
             </div>
             <div className="relative flex-grow md:max-w-[240px]">
-              <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <div className="flex">
-                <Input 
-                  className="pl-10 h-12 rounded-r-none" 
-                  placeholder="Location"
-                  value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  ref={locationInputRef}
-                />
-                <Button 
-                  variant="secondary" 
-                  className="h-12 rounded-l-none"
-                  onClick={getCurrentLocation}
-                  disabled={loadingLocation}
-                >
-                  {loadingLocation ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "📍"
-                  )}
-                </Button>
-              </div>
+              <LocationInput 
+                value={locationQuery}
+                onChange={handleLocationChange}
+                placeholder="Location"
+                className="h-12"
+              />
             </div>
             <Button onClick={handleSearch} className="h-12">
               Search
