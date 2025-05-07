@@ -1,12 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { SearchIcon, MapPin, Loader2 } from "lucide-react";
+import { SearchIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ListingCard, { ListingProps } from "@/components/ListingCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import { supabase } from "@/integrations/supabase/client";
 import { ListingTable } from "@/types/database";
+import LocationInput from "@/components/LocationInput";
 
 // Categories data
 const categories = [
@@ -145,6 +147,10 @@ const Index = () => {
     // Navigate to explore page with search parameters
     navigate(`/explore?search=${searchQuery}&location=${locationQuery}`);
   };
+
+  const handleLocationChange = (address: string, details?: { lat: number; lng: number }) => {
+    setLocationQuery(address);
+  };
   
   return (
     <div className="flex flex-col">
@@ -173,13 +179,11 @@ const Index = () => {
                 />
               </div>
               <div className="relative flex-grow">
-                <MapPin className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <Input 
-                  className="pl-10 h-12 text-gray-800" 
-                  placeholder="Location"
+                <LocationInput 
                   value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onChange={handleLocationChange}
+                  placeholder="Location"
+                  className="h-12"
                 />
               </div>
               <Button size="lg" className="h-12" onClick={handleSearch}>

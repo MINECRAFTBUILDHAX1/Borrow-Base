@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { Search, Filter, MapPin, Loader2 } from "lucide-react";
+
+import { useState, useEffect } from "react";
+import { Search, Filter, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { ListingTable } from "@/types/database";
 import { useToast } from "@/hooks/use-toast";
+import LocationInput from "@/components/LocationInput";
 import { GOOGLE_MAPS_API_KEY } from "@/config/api-keys";
 
 // Categories data
@@ -54,32 +56,8 @@ const Explore = () => {
   const [listings, setListings] = useState<ListingProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingLocation, setLoadingLocation] = useState(false);
-  const locationInputRef = useRef<HTMLInputElement>(null);
-  const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   
-  // Load Google Maps API script
-  useEffect(() => {
-    // Skip if the API is already loaded
-    if (window.google?.maps?.places) return;
-    
-    const scriptExists = document.getElementById("google-maps-script");
-    if (scriptExists) return;
-    
-    const script = document.createElement("script");
-    script.id = "google-maps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-    
-    return () => {
-      // Cleanup if component unmounts before script loads
-      const script = document.getElementById("google-maps-script");
-      if (script) document.head.removeChild(script);
-    };
-  }, []);
-
-  // Initialize Places Autocomplete - Replace with LocationInput component
+  // Replace Google Maps initialization with LocationInput component  
   const handleLocationChange = (address: string, details?: { lat: number; lng: number }) => {
     setLocationQuery(address);
     if (details) {

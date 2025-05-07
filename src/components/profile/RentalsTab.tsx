@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import ListingCard, { ListingProps } from "@/components/ListingCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,10 @@ interface Rental {
   rental_code: string;
   listing: any;
   seller: any;
+  seller_profile: {
+    username: string;
+    full_name?: string;
+  };
 }
 
 interface RentalsTabProps {
@@ -46,7 +51,8 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
             *,
             listing:listing_id (
               id, title, images, category, price_per_day, location
-            )
+            ),
+            seller_profile:seller_id (username, full_name)
           `)
           .or(`renter_id.eq.${user.id},seller_id.eq.${user.id}`)
           .order('created_at', { ascending: false });
@@ -119,6 +125,7 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
                 </div>
                 <p className="text-sm text-gray-500 mt-1">{rental.listing?.location}</p>
                 <div className="mt-2 text-sm">
+                  <p><span className="font-medium">Listed by:</span> {rental.seller_profile?.username || "Unknown user"}</p>
                   <p><span className="font-medium">Rental Code:</span> {rental.rental_code}</p>
                   <p><span className="font-medium">Dates:</span> {new Date(rental.start_date).toLocaleDateString()} - {new Date(rental.end_date).toLocaleDateString()}</p>
                   <p><span className="font-medium">Total:</span> £{rental.total_price}</p>
@@ -149,7 +156,7 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
           open={contactModalOpen}
           onOpenChange={setContactModalOpen}
           recipientId={user?.id === selectedRental.renter_id ? selectedRental.seller_id : selectedRental.renter_id}
-          recipientName={user?.id === selectedRental.renter_id ? "Lender" : "Renter"}
+          recipientName={user?.id === selectedRental.renter_id ? selectedRental.seller_profile?.username || "Lender" : "Renter"}
           listingTitle={selectedRental.listing?.title || "Item"}
           afterMessageSent={() => {
             toast({
