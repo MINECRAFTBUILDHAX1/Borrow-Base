@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,14 +121,19 @@ const Messages = () => {
             unread_count: unreadCount || 0,
             other_user: {
               id: otherId,
-              name: profileData?.username || profileData?.full_name || 'User',
+              name: profileData?.username || profileData?.full_name || 'Unknown User',
               avatar_url: profileData?.avatar_url
             },
             listing: listingData || { id: conv.listing_id, title: 'Item' }
           };
         }));
         
-        setConversations(conversationsWithDetails);
+        // Filter out any conversations that might be invalid
+        const validConversations = conversationsWithDetails.filter(conv => 
+          conv.listing && conv.listing.id && conv.other_user && conv.other_user.id
+        );
+        
+        setConversations(validConversations);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -147,14 +153,9 @@ const Messages = () => {
       const { data: rentalsData, error: rentalsError } = await supabase
         .from('rentals')
         .select(`
-          id, 
-          listing_id, 
-          renter_id, 
-          seller_id,
-          rental_code,
-          status,
+          *,
           listing:listing_id (
-            id, title, images
+            id, title, images, category, price_per_day, location
           )
         `)
         .or(`renter_id.eq.${user?.id},seller_id.eq.${user?.id}`)
@@ -163,7 +164,7 @@ const Messages = () => {
       if (rentalsError) throw rentalsError;
       
       if (rentalsData) {
-        const rentalsWithDetails = await Promise.all(rentalsData.map(async (rental) => {
+        const rentalsWithProfiles = await Promise.all(rentalsData.map(async (rental) => {
           // Determine which user is the "other" user
           const otherId = rental.renter_id === user?.id ? rental.seller_id : rental.renter_id;
           
@@ -187,13 +188,18 @@ const Messages = () => {
             unread_count: unreadCount || 0,
             other_user: {
               id: otherId,
-              name: profileData?.username || profileData?.full_name || 'User',
+              name: profileData?.username || profileData?.full_name || 'Unknown User',
               avatar_url: profileData?.avatar_url
             }
           };
         }));
         
-        setRentals(rentalsWithDetails);
+        // Filter out rentals with missing data
+        const validRentals = rentalsWithProfiles.filter(rental => 
+          rental.listing && rental.listing.id && rental.other_user && rental.other_user.id
+        );
+        
+        setRentals(validRentals);
       }
     } catch (error) {
       console.error('Error fetching rentals:', error);
@@ -393,7 +399,7 @@ const Messages = () => {
           listingTitle={selectedConversation.listing?.title || 'Item'}
           listingId={selectedConversation.listing_id}
           afterMessageSent={() => {
-            // Refresh conversations
+            // Refresh conversations after sending
             fetchConversations();
           }}
         />
@@ -407,7 +413,7 @@ const Messages = () => {
           listingTitle={selectedRental.listing?.title || 'Item'}
           rentalId={selectedRental.id}
           afterMessageSent={() => {
-            // Refresh rentals
+            // Refresh rentals after sending
             fetchRentals();
           }}
         />

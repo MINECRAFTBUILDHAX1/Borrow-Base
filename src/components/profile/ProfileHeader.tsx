@@ -31,10 +31,7 @@ const ProfileHeader = ({ userData, isOwnProfile }: ProfileHeaderProps) => {
   };
   
   const handleMessage = () => {
-    toast({
-      title: "Message feature",
-      description: "Messaging functionality coming soon!",
-    });
+    navigate('/messages');
   };
   
   return (

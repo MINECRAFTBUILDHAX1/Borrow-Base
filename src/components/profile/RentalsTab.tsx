@@ -54,16 +54,17 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
             *,
             listing:listing_id (
               id, title, images, category, price_per_day, location
-            )
+            ),
+            seller_profile:seller_id (username, full_name, avatar_url),
+            renter_profile:renter_id (username, full_name, avatar_url)
           `)
-          .or(`renter_id.eq.${user.id},seller_id.eq.${user.id}`)
+          .or(`renter_id.eq.${userId},seller_id.eq.${userId}`)
           .order('created_at', { ascending: false });
           
         if (error) throw error;
         
         if (data) {
-          const rentalsWithProfiles = await addUserProfilesToRentals(data as Rental[]);
-          setRentals(rentalsWithProfiles);
+          setRentals(data as Rental[]);
         }
       } catch (error) {
         console.error("Error fetching rentals:", error);
@@ -76,42 +77,23 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
     };
 
     fetchRentals();
-  }, [user, toast]);
-
-  const addUserProfilesToRentals = async (rentalsData: Rental[]) => {
-    const userIds = new Set<string>();
-    
-    // Collect all user IDs from rentals
-    rentalsData.forEach(rental => {
-      userIds.add(rental.seller_id);
-      userIds.add(rental.renter_id);
-    });
-    
-    // Fetch all profiles in one query
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, full_name')
-      .in('id', Array.from(userIds));
-    
-    // Create a map of user IDs to profiles
-    const profileMap = new Map();
-    if (profiles) {
-      profiles.forEach(profile => {
-        profileMap.set(profile.id, profile);
-      });
-    }
-    
-    // Add profiles to rentals
-    return rentalsData.map(rental => ({
-      ...rental,
-      seller_profile: profileMap.get(rental.seller_id) || { username: "Lender" },
-      renter_profile: profileMap.get(rental.renter_id) || { username: "Renter" }
-    }));
-  };
+  }, [user, toast, userId]);
 
   const handleContact = (rental: Rental) => {
     setSelectedRental(rental);
     setContactModalOpen(true);
+  };
+
+  const getRecipientName = (rental: Rental) => {
+    if (user?.id === rental.renter_id) {
+      return rental.seller_profile?.username || 
+             rental.seller_profile?.full_name || 
+             "Lender";
+    } else {
+      return rental.renter_profile?.username || 
+             rental.renter_profile?.full_name || 
+             "Renter";
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -160,7 +142,7 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
                 <p className="text-sm text-gray-500 mt-1">{rental.listing?.location}</p>
                 <div className="mt-2 text-sm">
                   <p><span className="font-medium">Listed by:</span> {rental.seller_profile?.username || rental.seller_profile?.full_name || "Unknown user"}</p>
-                  <p><span className="font-medium">Rental Code:</span> {rental.rental_code}</p>
+                  <p><span className="font-medium">Rental Code:</span> {rental.rental_code || "Not assigned"}</p>
                   <p><span className="font-medium">Dates:</span> {new Date(rental.start_date).toLocaleDateString()} - {new Date(rental.end_date).toLocaleDateString()}</p>
                   <p><span className="font-medium">Total:</span> £{rental.total_price}</p>
                 </div>
@@ -190,11 +172,7 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
           open={contactModalOpen}
           onOpenChange={setContactModalOpen}
           recipientId={user?.id === selectedRental.renter_id ? selectedRental.seller_id : selectedRental.renter_id}
-          recipientName={
-            user?.id === selectedRental.renter_id 
-              ? (selectedRental.seller_profile?.username || selectedRental.seller_profile?.full_name || "Lender")
-              : (selectedRental.renter_profile?.username || selectedRental.renter_profile?.full_name || "Renter")
-          }
+          recipientName={getRecipientName(selectedRental)}
           listingTitle={selectedRental.listing?.title || "Item"}
           afterMessageSent={() => {
             toast({

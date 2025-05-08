@@ -90,7 +90,9 @@ const AdminDashboard = () => {
           *,
           listing:listing_id (title, price_per_day, images),
           renter:renter_id (email, user_metadata),
-          seller:seller_id (email, user_metadata)
+          seller:seller_id (email, user_metadata),
+          renter_profile:renter_id (username, full_name),
+          seller_profile:seller_id (username, full_name)
         `)
         .order('created_at', { ascending: false });
       
@@ -130,7 +132,7 @@ const AdminDashboard = () => {
     }
     
     const filtered = rentals.filter(rental => 
-      rental.rental_code.toLowerCase().includes(searchCode.toLowerCase())
+      rental.rental_code?.toLowerCase().includes(searchCode.toLowerCase())
     );
     setFilteredRentals(filtered);
   };
@@ -359,7 +361,7 @@ const AdminDashboard = () => {
                 ) : (
                   filteredRentals.map((rental) => (
                     <TableRow key={rental.id}>
-                      <TableCell className="font-medium">{rental.rental_code}</TableCell>
+                      <TableCell className="font-medium">{rental.rental_code || "N/A"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {rental.listing?.images?.[0] && (
@@ -372,8 +374,18 @@ const AdminDashboard = () => {
                           <span>{rental.listing?.title || "Unknown Item"}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{rental.renter?.email || "Unknown"}</TableCell>
-                      <TableCell>{rental.seller?.email || "Unknown"}</TableCell>
+                      <TableCell>
+                        {rental.renter_profile?.username || 
+                         rental.renter_profile?.full_name || 
+                         rental.renter?.email || 
+                         "Unknown"}
+                      </TableCell>
+                      <TableCell>
+                        {rental.seller_profile?.username || 
+                         rental.seller_profile?.full_name || 
+                         rental.seller?.email || 
+                         "Unknown"}
+                      </TableCell>
                       <TableCell>
                         {new Date(rental.start_date).toLocaleDateString()} - 
                         {new Date(rental.end_date).toLocaleDateString()}

@@ -1,36 +1,30 @@
 
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 
 interface PaypalPaymentLinkProps {
   amount: number;
-  currency?: "GBP" | "USD" | "EUR";
-  rentalCode?: string;
+  currency: string;
+  rentalCode: string;
+  disabled?: boolean;
 }
 
-const PaypalPaymentLink = ({ amount, currency = "GBP", rentalCode }: PaypalPaymentLinkProps) => {
-  const [paymentUrl, setPaymentUrl] = useState("");
+const PaypalPaymentLink = ({ amount, currency, rentalCode, disabled = false }: PaypalPaymentLinkProps) => {
+  // For a real implementation, this would be generated from your backend
+  // This is just a placeholder that opens PayPal in a new window
+  const paypalDemoUrl = `https://www.paypal.com/paypalme/borrowbase/${amount}`;
   
-  useEffect(() => {
-    // Format amount to ensure it has 2 decimal places
-    const formattedAmount = amount.toFixed(2);
-    setPaymentUrl(`https://paypal.me/1millionjourney/${formattedAmount}`);
-  }, [amount]);
-
   return (
-    <a 
-      href={paymentUrl} 
-      className="bg-[#0070BA] hover:bg-[#003087] text-white font-medium py-2 px-4 rounded flex items-center justify-center"
-      target="_blank" 
-      rel="noopener noreferrer"
+    <Button 
+      variant="outline" 
+      className="w-full flex items-center justify-center gap-2 bg-[#0070BA] hover:bg-[#005ea6] text-white hover:text-white"
+      onClick={() => window.open(paypalDemoUrl, '_blank')}
+      disabled={disabled}
     >
-      <img 
-        src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
-        alt="PayPal" 
-        className="h-5 mr-2"
-      />
-      Pay with PayPal ({currency} {amount.toFixed(2)})
-      {rentalCode && <span className="ml-2 text-sm bg-white/20 px-1 rounded">{rentalCode}</span>}
-    </a>
+      <span>Pay with PayPal</span>
+      <ExternalLink className="h-4 w-4" />
+      <span className="ml-1 text-xs">({rentalCode})</span>
+    </Button>
   );
 };
 

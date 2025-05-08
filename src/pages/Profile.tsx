@@ -55,16 +55,16 @@ const Profile = () => {
           id: userId || "",
           name: profile?.username || 
                 profile?.full_name || 
-                (isViewingOtherProfile ? "User" : user?.user_metadata?.full_name) || 
+                (isViewingOtherProfile ? "Unknown User" : user?.user_metadata?.full_name) || 
                 (isViewingOtherProfile ? "" : user?.email?.split('@')[0]) || 
-                "User",
+                "Unknown User",
           image: profile?.avatar_url || 
                 (isViewingOtherProfile ? "" : user?.user_metadata?.avatar_url) || 
                  "",
           bio: profile?.bio || 
                (isViewingOtherProfile ? "" : user?.user_metadata?.bio) || 
                "",
-          location: isViewingOtherProfile ? "" : user?.user_metadata?.location || "",
+          location: profile?.location || (isViewingOtherProfile ? "" : user?.user_metadata?.location || ""),
           memberSince: new Date(profile?.created_at || (isViewingOtherProfile ? Date.now() : user?.created_at || Date.now())).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}),
           rating: 0,
           reviewCount: 0,
