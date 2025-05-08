@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ImageGallery } from "@/components/listing/ImageGallery";
-import { RentalSection } from "@/components/listing/RentalSection";
+import RentalSection from "@/components/listing/RentalSection";
 import ListingDetailInfo from "@/components/listing/ListingDetailInfo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
