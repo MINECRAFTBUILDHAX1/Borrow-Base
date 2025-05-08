@@ -12,7 +12,7 @@ interface PaypalPaymentLinkProps {
 const PaypalPaymentLink = ({ amount, currency, rentalCode, disabled = false }: PaypalPaymentLinkProps) => {
   // For a real implementation, this would be generated from your backend
   // This is just a placeholder that opens PayPal in a new window
-  const paypalDemoUrl = `https://www.paypal.com/paypalme/borrowbase/${amount}`;
+  const paypalDemoUrl = `https://www.paypal.com/paypalme/1millionjourney/${amount}`;
   
   return (
     <Button 
