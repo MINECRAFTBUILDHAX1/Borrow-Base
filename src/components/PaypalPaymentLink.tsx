@@ -20,6 +20,8 @@ const PaypalPaymentLink = ({ amount, currency = "GBP", rentalCode }: PaypalPayme
     <a 
       href={paymentUrl} 
       className="bg-[#0070BA] hover:bg-[#003087] text-white font-medium py-2 px-4 rounded flex items-center justify-center"
+      target="_blank" 
+      rel="noopener noreferrer"
     >
       <img 
         src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 

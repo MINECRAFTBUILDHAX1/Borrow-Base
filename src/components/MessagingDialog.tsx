@@ -26,6 +26,7 @@ interface MessagingDialogProps {
   listingTitle: string;
   afterMessageSent?: () => void;
   rentalId?: string;
+  listingId?: string;
 }
 
 interface Message {
@@ -44,24 +45,30 @@ const MessagingDialog = ({
   recipientImage,
   listingTitle,
   afterMessageSent,
-  rentalId
+  rentalId,
+  listingId
 }: MessagingDialogProps) => {
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [rental, setRental] = useState<any>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
   // Fetch existing messages when the dialog opens
   useEffect(() => {
-    if (open && rentalId) {
-      fetchMessages();
-      fetchRentalDetails();
+    if (open) {
+      if (rentalId) {
+        fetchMessagesByRentalId();
+        fetchRentalDetails();
+      } else if (listingId && user) {
+        fetchMessagesByListingAndUsers();
+      }
     }
-  }, [open, rentalId]);
+  }, [open, rentalId, listingId, user]);
 
-  const fetchMessages = async () => {
+  const fetchMessagesByRentalId = async () => {
     if (!rentalId || !user) return;
     
     try {
@@ -88,6 +95,61 @@ const MessagingDialog = ({
             .update({ is_read: true })
             .in('id', unreadIds);
         }
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
+
+  const fetchMessagesByListingAndUsers = async () => {
+    if (!listingId || !user) return;
+    
+    try {
+      // First check if a conversation already exists between these users for this listing
+      const { data: conversationData, error: conversationError } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('listing_id', listingId)
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .order('created_at', { ascending: false })
+        .single();
+      
+      if (conversationError && conversationError.code !== 'PGRST116') {
+        throw conversationError;
+      }
+      
+      if (conversationData) {
+        setConversationId(conversationData.id);
+        
+        // Fetch messages for this conversation
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', conversationData.id)
+          .order('created_at', { ascending: true });
+          
+        if (messagesError) throw messagesError;
+        
+        if (messagesData) {
+          setMessages(messagesData);
+          
+          // Mark messages as read
+          const unreadMessages = messagesData.filter(
+            msg => msg.sender_id !== user.id && !msg.is_read
+          );
+          
+          if (unreadMessages.length > 0) {
+            const unreadIds = unreadMessages.map(msg => msg.id);
+            await supabase
+              .from('messages')
+              .update({ is_read: true })
+              .in('id', unreadIds);
+          }
+        }
+      } else {
+        // No conversation exists yet
+        setMessages([]);
+        setConversationId(null);
       }
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -133,44 +195,83 @@ const MessagingDialog = ({
       return;
     }
 
-    if (!rentalId && !rental) {
-      // Create a new rental record first
-      // This would be for initial contact before booking
-      // However, this case is not implemented in the current flow
-      toast({
-        title: "Unable to send message",
-        description: "Missing rental information",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSending(true);
 
     try {
-      const currentRentalId = rentalId || rental?.id;
-      
-      if (!currentRentalId) {
-        throw new Error("Missing rental ID");
-      }
-      
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({
-          rental_id: currentRentalId,
-          sender_id: user.id,
-          message: messageText,
-          is_read: false
-        })
-        .select('*');
+      // Different logic based on whether this is a rental message or a listing inquiry
+      if (rentalId) {
+        // For existing rentals
+        const { data, error } = await supabase
+          .from('messages')
+          .insert({
+            rental_id: rentalId,
+            sender_id: user.id,
+            message: messageText,
+            is_read: false
+          })
+          .select('*');
+          
+        if (error) throw error;
         
-      if (error) throw error;
-      
-      if (data) {
-        setMessageText("");
-        setMessages([...messages, data[0]]);
-        if (afterMessageSent) {
-          afterMessageSent();
+        if (data) {
+          setMessageText("");
+          setMessages([...messages, data[0]]);
+          if (afterMessageSent) {
+            afterMessageSent();
+          }
+        }
+      } else if (listingId) {
+        // For listing inquiries, we need to create or use existing conversation
+        let currentConversationId = conversationId;
+        
+        if (!currentConversationId) {
+          // Create new conversation first
+          const { data: convData, error: convError } = await supabase
+            .from('conversations')
+            .insert({
+              listing_id: listingId,
+              sender_id: user.id,
+              recipient_id: recipientId,
+              last_message_at: new Date().toISOString(),
+              last_message: messageText
+            })
+            .select('*')
+            .single();
+            
+          if (convError) throw convError;
+          
+          currentConversationId = convData.id;
+          setConversationId(currentConversationId);
+        } else {
+          // Update existing conversation with last message
+          await supabase
+            .from('conversations')
+            .update({
+              last_message_at: new Date().toISOString(),
+              last_message: messageText
+            })
+            .eq('id', currentConversationId);
+        }
+        
+        // Now insert the message linked to the conversation
+        const { data, error } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: currentConversationId,
+            sender_id: user.id,
+            message: messageText,
+            is_read: false
+          })
+          .select('*');
+          
+        if (error) throw error;
+        
+        if (data) {
+          setMessageText("");
+          setMessages([...messages, data[0]]);
+          if (afterMessageSent) {
+            afterMessageSent();
+          }
         }
       }
     } catch (error) {

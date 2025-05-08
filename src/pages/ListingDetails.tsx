@@ -1,15 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, ChevronLeft, MapPin, Star, Clock, ShieldCheck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -19,12 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import PaypalPaymentLink from "@/components/PaypalPaymentLink";
 import MessagingDialog from "@/components/MessagingDialog";
 import PaymentSuccessDialog from "@/components/PaymentSuccessDialog";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { format, addDays, isSameDay, isWithinInterval } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -35,6 +23,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+// Import the components we will create for refactoring
+import ImageGallery from "@/components/listing/ImageGallery";
+import ListingDetailInfo from "@/components/listing/ListingDetailInfo";
+import RentalSection from "@/components/listing/RentalSection";
 
 interface RentalDateRange {
   start: Date;
@@ -137,20 +130,48 @@ const ListingDetails = () => {
     if (!ownerId) return;
     
     try {
-      const { data: userData } = await supabase.auth.admin.getUserById(ownerId);
-      if (userData && userData.user) {
+      // First check if we have a profiles table with this user
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', ownerId)
+        .single();
+
+      if (profileData) {
+        // We have a profile record
         setOwner({
           id: ownerId,
-          name: userData.user.user_metadata?.full_name || 
-                userData.user.email?.split('@')[0] || 
+          name: profileData.username || profileData.full_name || "Lender",
+          email: profileData.email || "",
+          image: profileData.avatar_url || "",
+          createdAt: profileData.created_at || new Date().toISOString()
+        });
+        return;
+      }
+      
+      // If no profiles table or no record found, use auth data
+      const { data } = await supabase.auth.admin.getUserById(ownerId);
+      if (data && data.user) {
+        setOwner({
+          id: ownerId,
+          name: data.user.user_metadata?.full_name || 
+                data.user.email?.split('@')[0] || 
                 "Lender",
-          email: userData.user.email,
-          image: userData.user.user_metadata?.avatar_url || "",
-          createdAt: userData.user.created_at
+          email: data.user.email,
+          image: data.user.user_metadata?.avatar_url || "",
+          createdAt: data.user.created_at
         });
       }
     } catch (error) {
       console.error("Error fetching owner data:", error);
+      // Set default owner data if fetch fails
+      setOwner({
+        id: ownerId,
+        name: "Lender",
+        email: "",
+        image: "",
+        createdAt: new Date().toISOString()
+      });
     }
   };
   
@@ -379,27 +400,7 @@ const ListingDetails = () => {
       </div>
       
       {/* Images carousel */}
-      <div className="mb-8">
-        <Carousel className="w-full">
-          <CarouselContent>
-            {listing.images.map((image: string, index: number) => (
-              <CarouselItem key={index} className="md:basis-2/3 lg:basis-1/2">
-                <div className="p-1">
-                  <div className="overflow-hidden rounded-lg">
-                    <img 
-                      src={image} 
-                      alt={`${listing.title} - Image ${index + 1}`} 
-                      className="w-full aspect-[4/3] object-cover"
-                    />
-                  </div>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
-        </Carousel>
-      </div>
+      <ImageGallery images={listing.images} title={listing.title} />
       
       {/* Main content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -428,60 +429,12 @@ const ListingDetails = () => {
           
           <Separator />
           
-          {/* Description */}
-          <div>
-            <h2 className="text-xl font-semibold mb-3">About this item</h2>
-            <p className="text-gray-700">{listing.description}</p>
-          </div>
-          
-          {/* Features */}
-          {listing.features && listing.features.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-3">Features</h2>
-              <ul className="grid grid-cols-2 gap-2">
-                {listing.features.map((feature: string, index: number) => (
-                  <li key={index} className="flex items-center">
-                    <div className="h-1.5 w-1.5 rounded-full bg-brand-purple mr-2"></div>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {/* Rules */}
-          {listing.rules && listing.rules.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-3">Rules</h2>
-              <ul className="space-y-2">
-                {listing.rules.map((rule: string, index: number) => (
-                  <li key={index} className="flex items-center">
-                    <div className="h-1.5 w-1.5 rounded-full bg-brand-purple mr-2"></div>
-                    <span>{rule}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {/* Booked dates */}
-          <div>
-            <h2 className="text-xl font-semibold mb-3">Availability</h2>
-            {bookedRanges.length > 0 ? (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-medium mb-2">Booked Dates:</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {bookedRanges.map((range, index) => (
-                    <div key={index} className="bg-red-50 text-red-600 px-2 py-1 rounded text-sm">
-                      {format(range.start, 'MMM dd')} - {format(range.end, 'MMM dd, yyyy')}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="text-green-600">All dates currently available!</p>
-            )}
-          </div>
+          <ListingDetailInfo 
+            description={listing.description}
+            features={listing.features}
+            rules={listing.rules}
+            bookedRanges={bookedRanges}
+          />
           
           <Separator />
           
@@ -544,133 +497,22 @@ const ListingDetails = () => {
                 )}
               </div>
             )}
-            
-            {!isOwner && (
-              <div className="mt-4">
-                <Button onClick={() => setShowReviewDialog(true)}>
-                  {reviews.length > 0 ? "Add a review" : "Be the first to review"}
-                </Button>
-              </div>
-            )}
           </div>
         </div>
         
         {/* Right column - Booking card */}
         <div className="lg:col-span-1">
-          <div className="sticky top-20">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-2xl font-semibold">
-                    £{listing.price_per_day}<span className="text-base font-normal text-gray-600">/day</span>
-                  </p>
-                  <Badge variant="outline" className="bg-brand-pastel-green text-gray-800 font-normal">
-                    Available Now
-                  </Badge>
-                </div>
-                
-                {/* Date selection */}
-                <div className="space-y-4 mb-6">
-                  <div>
-                    <p className="font-medium mb-2">Select dates</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {startDate ? format(startDate, "MMM dd") : "Start date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={startDate ?? undefined}
-                            onSelect={(date) => handleDateSelect(date)}
-                            disabled={isDateDisabled}
-                            className="p-3 pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {endDate ? format(endDate, "MMM dd") : "End date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={endDate ?? undefined}
-                            onSelect={(date) => handleDateSelect(date)}
-                            disabled={(date) => {
-                              if (!startDate) return true;
-                              return date < startDate || isDateDisabled(date);
-                            }}
-                            className="p-3 pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-                  
-                  {startDate && endDate && (
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex justify-between mb-2">
-                        <span>Total</span>
-                        <span className="font-semibold">£{totalPrice}</span>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        For {Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
-                      </p>
-                    </div>
-                  )}
-                  
-                  {listing.security_deposit > 0 && (
-                    <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
-                      <ShieldCheck className="h-5 w-5 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium">£{listing.security_deposit} security deposit</p>
-                        <p className="text-xs text-gray-600">Will be refunded after successful return</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Payment link - only show if dates are selected */}
-                {startDate && endDate && totalPrice ? (
-                  <div 
-                    onClick={handlePaymentInitiate}
-                    className="mb-3"
-                  >
-                    <PaypalPaymentLink 
-                      amount={totalPrice} 
-                      currency="GBP" 
-                      rentalCode={rentalCode || undefined}
-                    />
-                  </div>
-                ) : (
-                  <div className="mb-3 text-center p-2 bg-amber-50 text-amber-700 rounded-lg text-sm">
-                    Please select start and end dates to proceed with payment
-                  </div>
-                )}
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full flex items-center justify-center gap-2" 
-                  onClick={handleContactOwner}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Contact Lender
-                </Button>
-                
-                <p className="text-xs text-center mt-4 text-gray-500">
-                  85% of the payment goes to the lender within 2 days of rental start
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <RentalSection
+            listing={listing}
+            startDate={startDate}
+            endDate={endDate}
+            totalPrice={totalPrice}
+            handleDateSelect={handleDateSelect}
+            isDateDisabled={isDateDisabled}
+            handlePaymentInitiate={handlePaymentInitiate}
+            handleContactOwner={handleContactOwner}
+            rentalCode={rentalCode}
+          />
         </div>
       </div>
 
@@ -721,6 +563,7 @@ const ListingDetails = () => {
         recipientImage={owner?.image}
         listingTitle={listing.title}
         rentalId={rentalId || undefined}
+        listingId={id}
         afterMessageSent={() => {
           toast({
             title: "Message sent",
