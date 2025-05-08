@@ -44,7 +44,7 @@ const RentalSection = ({
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="text-2xl font-semibold">
-              £{listing.price_per_day}<span className="text-base font-normal text-gray-600">/day</span>
+£{listing?.price_per_day || 'N/A'}<span className="text-base font-normal text-gray-600">/day</span>
             </p>
             <Badge variant="outline" className="bg-brand-pastel-green text-gray-800 font-normal">
               Available Now
