@@ -5,6 +5,9 @@ import { Search, LogOut, Settings, UserCircle, BarChart3 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BorrowBaseLogo from "./BorrowBaseLogo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
