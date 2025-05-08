@@ -545,15 +545,7 @@ const ListingDetails = () => {
               </div>
             )}
             
-            {!isOwner && (
-              <div className="mt-4">
-                <Button onClick={() => setShowReviewDialog(true)}>
-                  {reviews.length > 0 ? "Add a review" : "Be the first to review"}
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+          
         
         {/* Right column - Booking card */}
         <div className="lg:col-span-1">
