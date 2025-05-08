@@ -35,6 +35,18 @@ interface Message {
   created_at: string;
   sender_id: string;
   is_read: boolean;
+  rental_id?: string;
+  conversation_id?: string;
+}
+
+interface Conversation {
+  id: string;
+  listing_id: string;
+  sender_id: string;
+  recipient_id: string;
+  last_message?: string;
+  last_message_at?: string;
+  created_at: string;
 }
 
 const MessagingDialog = ({
@@ -58,11 +70,11 @@ const MessagingDialog = ({
 
   // Fetch existing messages when the dialog opens
   useEffect(() => {
-    if (open) {
+    if (open && user) {
       if (rentalId) {
         fetchMessagesByRentalId();
         fetchRentalDetails();
-      } else if (listingId && user) {
+      } else if (listingId) {
         fetchMessagesByListingAndUsers();
       }
     }
@@ -81,7 +93,7 @@ const MessagingDialog = ({
       if (error) throw error;
       
       if (data) {
-        setMessages(data);
+        setMessages(data as Message[]);
         
         // Mark messages as read
         const unreadMessages = data.filter(
@@ -106,32 +118,37 @@ const MessagingDialog = ({
     
     try {
       // First check if a conversation already exists between these users for this listing
-      const { data: conversationData, error: conversationError } = await supabase
+      const { data: conversationsData, error: conversationsError } = await supabase
         .from('conversations')
         .select('*')
         .eq('listing_id', listingId)
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-        .order('created_at', { ascending: false })
-        .single();
+        .order('created_at', { ascending: false });
       
-      if (conversationError && conversationError.code !== 'PGRST116') {
-        throw conversationError;
+      if (conversationsError) {
+        throw conversationsError;
       }
       
-      if (conversationData) {
-        setConversationId(conversationData.id);
+      // Find the conversation between the current user and the recipient
+      const conversation = conversationsData?.find(conv => 
+        (conv.sender_id === user.id && conv.recipient_id === recipientId) || 
+        (conv.sender_id === recipientId && conv.recipient_id === user.id)
+      ) as Conversation | undefined;
+      
+      if (conversation) {
+        setConversationId(conversation.id);
         
         // Fetch messages for this conversation
         const { data: messagesData, error: messagesError } = await supabase
           .from('messages')
           .select('*')
-          .eq('conversation_id', conversationData.id)
+          .eq('conversation_id', conversation.id)
           .order('created_at', { ascending: true });
           
         if (messagesError) throw messagesError;
         
         if (messagesData) {
-          setMessages(messagesData);
+          setMessages(messagesData as Message[]);
           
           // Mark messages as read
           const unreadMessages = messagesData.filter(
@@ -215,7 +232,7 @@ const MessagingDialog = ({
         
         if (data) {
           setMessageText("");
-          setMessages([...messages, data[0]]);
+          setMessages([...messages, data[0] as Message]);
           if (afterMessageSent) {
             afterMessageSent();
           }
@@ -232,45 +249,48 @@ const MessagingDialog = ({
               listing_id: listingId,
               sender_id: user.id,
               recipient_id: recipientId,
-              last_message_at: new Date().toISOString(),
-              last_message: messageText
+              last_message: messageText,
+              last_message_at: new Date().toISOString()
             })
-            .select('*')
-            .single();
+            .select('*');
             
           if (convError) throw convError;
           
-          currentConversationId = convData.id;
-          setConversationId(currentConversationId);
+          if (convData && convData.length > 0) {
+            currentConversationId = convData[0].id;
+            setConversationId(currentConversationId);
+          }
         } else {
           // Update existing conversation with last message
           await supabase
             .from('conversations')
             .update({
-              last_message_at: new Date().toISOString(),
-              last_message: messageText
+              last_message: messageText,
+              last_message_at: new Date().toISOString()
             })
             .eq('id', currentConversationId);
         }
         
-        // Now insert the message linked to the conversation
-        const { data, error } = await supabase
-          .from('messages')
-          .insert({
-            conversation_id: currentConversationId,
-            sender_id: user.id,
-            message: messageText,
-            is_read: false
-          })
-          .select('*');
+        if (currentConversationId) {
+          // Now insert the message linked to the conversation
+          const { data, error } = await supabase
+            .from('messages')
+            .insert({
+              conversation_id: currentConversationId,
+              sender_id: user.id,
+              message: messageText,
+              is_read: false
+            })
+            .select('*');
+            
+          if (error) throw error;
           
-        if (error) throw error;
-        
-        if (data) {
-          setMessageText("");
-          setMessages([...messages, data[0]]);
-          if (afterMessageSent) {
-            afterMessageSent();
+          if (data) {
+            setMessageText("");
+            setMessages([...messages, data[0] as Message]);
+            if (afterMessageSent) {
+              afterMessageSent();
+            }
           }
         }
       }

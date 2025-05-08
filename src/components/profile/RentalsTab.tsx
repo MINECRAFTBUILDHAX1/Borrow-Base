@@ -21,9 +21,12 @@ interface Rental {
   status: string;
   rental_code: string;
   listing: any;
-  seller: any;
-  seller_profile: {
-    username: string;
+  seller_profile?: {
+    username?: string;
+    full_name?: string;
+  };
+  renter_profile?: {
+    username?: string;
     full_name?: string;
   };
 }
@@ -51,8 +54,7 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
             *,
             listing:listing_id (
               id, title, images, category, price_per_day, location
-            ),
-            seller_profile:seller_id (username, full_name)
+            )
           `)
           .or(`renter_id.eq.${user.id},seller_id.eq.${user.id}`)
           .order('created_at', { ascending: false });
@@ -60,7 +62,8 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
         if (error) throw error;
         
         if (data) {
-          setRentals(data as any);
+          const rentalsWithProfiles = await addUserProfilesToRentals(data as Rental[]);
+          setRentals(rentalsWithProfiles);
         }
       } catch (error) {
         console.error("Error fetching rentals:", error);
@@ -74,6 +77,37 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
 
     fetchRentals();
   }, [user, toast]);
+
+  const addUserProfilesToRentals = async (rentalsData: Rental[]) => {
+    const userIds = new Set<string>();
+    
+    // Collect all user IDs from rentals
+    rentalsData.forEach(rental => {
+      userIds.add(rental.seller_id);
+      userIds.add(rental.renter_id);
+    });
+    
+    // Fetch all profiles in one query
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, full_name')
+      .in('id', Array.from(userIds));
+    
+    // Create a map of user IDs to profiles
+    const profileMap = new Map();
+    if (profiles) {
+      profiles.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+    
+    // Add profiles to rentals
+    return rentalsData.map(rental => ({
+      ...rental,
+      seller_profile: profileMap.get(rental.seller_id) || { username: "Lender" },
+      renter_profile: profileMap.get(rental.renter_id) || { username: "Renter" }
+    }));
+  };
 
   const handleContact = (rental: Rental) => {
     setSelectedRental(rental);
@@ -125,7 +159,7 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
                 </div>
                 <p className="text-sm text-gray-500 mt-1">{rental.listing?.location}</p>
                 <div className="mt-2 text-sm">
-                  <p><span className="font-medium">Listed by:</span> {rental.seller_profile?.username || "Unknown user"}</p>
+                  <p><span className="font-medium">Listed by:</span> {rental.seller_profile?.username || rental.seller_profile?.full_name || "Unknown user"}</p>
                   <p><span className="font-medium">Rental Code:</span> {rental.rental_code}</p>
                   <p><span className="font-medium">Dates:</span> {new Date(rental.start_date).toLocaleDateString()} - {new Date(rental.end_date).toLocaleDateString()}</p>
                   <p><span className="font-medium">Total:</span> £{rental.total_price}</p>
@@ -156,7 +190,11 @@ const RentalsTab = ({ rentals: initialRentals, userId }: RentalsTabProps) => {
           open={contactModalOpen}
           onOpenChange={setContactModalOpen}
           recipientId={user?.id === selectedRental.renter_id ? selectedRental.seller_id : selectedRental.renter_id}
-          recipientName={user?.id === selectedRental.renter_id ? selectedRental.seller_profile?.username || "Lender" : "Renter"}
+          recipientName={
+            user?.id === selectedRental.renter_id 
+              ? (selectedRental.seller_profile?.username || selectedRental.seller_profile?.full_name || "Lender")
+              : (selectedRental.renter_profile?.username || selectedRental.renter_profile?.full_name || "Renter")
+          }
           listingTitle={selectedRental.listing?.title || "Item"}
           afterMessageSent={() => {
             toast({

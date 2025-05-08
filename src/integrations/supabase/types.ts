@@ -24,6 +24,47 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message: string | null
+          last_message_at: string | null
+          listing_id: string
+          recipient_id: string
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          listing_id: string
+          recipient_id: string
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          listing_id?: string
+          recipient_id?: string
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           average_rating: number | null
@@ -86,6 +127,7 @@ export type Database = {
       }
       messages: {
         Row: {
+          conversation_id: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -94,6 +136,7 @@ export type Database = {
           sender_id: string
         }
         Insert: {
+          conversation_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -102,6 +145,7 @@ export type Database = {
           sender_id: string
         }
         Update: {
+          conversation_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -111,6 +155,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_rental_id_fkey"
             columns: ["rental_id"]
             isOneToOne: false
@@ -118,6 +169,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
       }
       rentals: {
         Row: {

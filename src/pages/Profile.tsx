@@ -28,14 +28,36 @@ const Profile = () => {
         
         const userId = id === "me" ? user?.id : id;
         
-        // Build user data from auth metadata since we don't have a profiles table yet
+        // Try to fetch user profile from profiles table
+        let profile = null;
+        if (userId) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+            
+          if (!profileError && profileData) {
+            profile = profileData;
+          }
+        }
+        
+        // Build user data from profile or auth metadata
         const userData: UserData = {
           id: userId || "",
-          name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User",
-          image: user?.user_metadata?.avatar_url || "",
-          bio: user?.user_metadata?.bio || "",
+          name: profile?.username || 
+                profile?.full_name || 
+                user?.user_metadata?.full_name || 
+                user?.email?.split('@')[0] || 
+                "User",
+          image: profile?.avatar_url || 
+                 user?.user_metadata?.avatar_url || 
+                 "",
+          bio: profile?.bio || 
+               user?.user_metadata?.bio || 
+               "",
           location: user?.user_metadata?.location || "",
-          memberSince: new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}),
+          memberSince: new Date(profile?.created_at || user?.created_at || Date.now()).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}),
           rating: 0,
           reviewCount: 0,
           verified: Boolean(user?.email_confirmed_at),

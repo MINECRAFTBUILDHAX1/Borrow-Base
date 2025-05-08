@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, ChevronLeft, MapPin, Star, Clock, ShieldCheck, MessageCircle } from "lucide-react";
@@ -130,14 +129,14 @@ const ListingDetails = () => {
     if (!ownerId) return;
     
     try {
-      // First check if we have a profiles table with this user
+      // Check if we have a profile record for this user
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', ownerId)
         .single();
 
-      if (profileData) {
+      if (!profileError && profileData) {
         // We have a profile record
         setOwner({
           id: ownerId,
@@ -149,19 +148,14 @@ const ListingDetails = () => {
         return;
       }
       
-      // If no profiles table or no record found, use auth data
-      const { data } = await supabase.auth.admin.getUserById(ownerId);
-      if (data && data.user) {
-        setOwner({
-          id: ownerId,
-          name: data.user.user_metadata?.full_name || 
-                data.user.email?.split('@')[0] || 
-                "Lender",
-          email: data.user.email,
-          image: data.user.user_metadata?.avatar_url || "",
-          createdAt: data.user.created_at
-        });
-      }
+      // If no profile found, use default values
+      setOwner({
+        id: ownerId,
+        name: "Lender",
+        email: "",
+        image: "",
+        createdAt: new Date().toISOString()
+      });
     } catch (error) {
       console.error("Error fetching owner data:", error);
       // Set default owner data if fetch fails
