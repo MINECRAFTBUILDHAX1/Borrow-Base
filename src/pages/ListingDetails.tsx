@@ -233,8 +233,8 @@ const ListingDetails = () => {
     }
     
     try {
-      // Create a new rental record in the database with the required rental_code field
-      // The rental_code will be set by the trigger we created
+      // Note: We don't set rental_code explicitly because the database trigger
+      // will generate it automatically for us
       const { data: rentalData, error } = await supabase
         .from('rentals')
         .insert({

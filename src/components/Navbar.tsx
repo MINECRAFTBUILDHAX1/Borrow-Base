@@ -18,6 +18,36 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const Navbar = () => {
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
+    }
+  }, [user]);
+  
+  const fetchUnreadCount = async () => {
+    try {
+      // Count unread messages where the user is the recipient
+      const { count: conversationCount } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_read', false)
+        .neq('sender_id', user?.id || '')
+        .not('conversation_id', 'is', null);
+
+      const { count: rentalCount } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_read', false)
+        .neq('sender_id', user?.id || '')
+        .not('rental_id', 'is', null);
+        
+      setUnreadCount((conversationCount || 0) + (rentalCount || 0));
+    } catch (error) {
+      console.error('Error fetching unread messages:', error);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -64,6 +94,14 @@ const Navbar = () => {
               </Link>
               <Link to="/create-listing" className="text-gray-600 hover:text-brand-purple transition-colors">
                 List Your Item
+              </Link>
+              <Link to="/messages" className="text-gray-600 hover:text-brand-purple transition-colors relative">
+                Messages
+                {unreadCount > 0 && (
+                  <Badge className="absolute -top-2 -right-3 h-5 w-5 p-0 flex items-center justify-center bg-red-500">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Badge>
+                )}
               </Link>
             </div>
           </div>

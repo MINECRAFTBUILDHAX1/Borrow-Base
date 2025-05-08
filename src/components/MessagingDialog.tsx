@@ -273,14 +273,18 @@ const MessagingDialog = ({
         
         if (currentConversationId) {
           // Now insert the message linked to the conversation
+          // Important fix: For messages with conversation_id, rental_id can be null
+          const messageData = {
+            conversation_id: currentConversationId,
+            sender_id: user.id,
+            message: messageText,
+            is_read: false,
+            rental_id: null as string | null // Added null rental_id
+          };
+          
           const { data, error } = await supabase
             .from('messages')
-            .insert({
-              conversation_id: currentConversationId,
-              sender_id: user.id,
-              message: messageText,
-              is_read: false
-            })
+            .insert(messageData)
             .select('*');
             
           if (error) throw error;

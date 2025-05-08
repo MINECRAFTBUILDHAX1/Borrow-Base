@@ -22,11 +22,16 @@ const Profile = () => {
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        if (!user && id === "me") {
+        // Determine which user ID to fetch
+        let userId = id;
+        
+        // If "me" and logged in, use logged-in user's ID
+        if (id === "me" && user) {
+          userId = user.id;
+        } else if (id === "me" && !user) {
+          // If "me" and not logged in, we'll handle this with a redirect
           return;
         }
-        
-        const userId = id === "me" ? user?.id : id;
         
         // Try to fetch user profile from profiles table
         let profile = null;
@@ -42,25 +47,28 @@ const Profile = () => {
           }
         }
         
+        // If viewing someone else's profile, we need to use their data only
+        const isViewingOtherProfile = user && userId !== user.id;
+        
         // Build user data from profile or auth metadata
         const userData: UserData = {
           id: userId || "",
           name: profile?.username || 
                 profile?.full_name || 
-                user?.user_metadata?.full_name || 
-                user?.email?.split('@')[0] || 
+                (isViewingOtherProfile ? "User" : user?.user_metadata?.full_name) || 
+                (isViewingOtherProfile ? "" : user?.email?.split('@')[0]) || 
                 "User",
           image: profile?.avatar_url || 
-                 user?.user_metadata?.avatar_url || 
+                (isViewingOtherProfile ? "" : user?.user_metadata?.avatar_url) || 
                  "",
           bio: profile?.bio || 
-               user?.user_metadata?.bio || 
+               (isViewingOtherProfile ? "" : user?.user_metadata?.bio) || 
                "",
-          location: user?.user_metadata?.location || "",
-          memberSince: new Date(profile?.created_at || user?.created_at || Date.now()).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}),
+          location: isViewingOtherProfile ? "" : user?.user_metadata?.location || "",
+          memberSince: new Date(profile?.created_at || (isViewingOtherProfile ? Date.now() : user?.created_at || Date.now())).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}),
           rating: 0,
           reviewCount: 0,
-          verified: Boolean(user?.email_confirmed_at),
+          verified: isViewingOtherProfile ? false : Boolean(user?.email_confirmed_at),
           listings: [],
           rentals: [],
           reviews: []

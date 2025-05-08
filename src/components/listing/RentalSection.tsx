@@ -106,6 +106,11 @@ const RentalSection = ({
                 <p className="text-xs text-gray-500">
                   For {Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
                 </p>
+                {rentalCode && (
+                  <p className="mt-2 text-sm font-medium text-center text-brand-purple">
+                    Your rental code: {rentalCode}
+                  </p>
+                )}
               </div>
             )}
             
@@ -122,24 +127,39 @@ const RentalSection = ({
           
           {/* Payment link - only show if dates are selected */}
           {startDate && endDate && totalPrice ? (
-            <div 
-              onClick={handlePaymentInitiate}
-              className="mb-3"
-            >
-              <a 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  handlePaymentInitiate();
-                }}
-                className="block"
-              >
-                <PaypalPaymentLink 
-                  amount={totalPrice} 
-                  currency="GBP" 
-                  rentalCode={rentalCode || undefined}
-                />
-              </a>
+            <div className="mb-3">
+              {rentalCode ? (
+                <a 
+                  href={`https://paypal.me/1millionjourney/${totalPrice}`}
+                  className="bg-[#0070BA] hover:bg-[#003087] text-white font-medium py-2 px-4 rounded flex items-center justify-center"
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <img 
+                    src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
+                    alt="PayPal" 
+                    className="h-5 mr-2"
+                  />
+                  Pay with PayPal (GBP {totalPrice.toFixed(2)})
+                  <span className="ml-2 text-sm bg-white/20 px-1 rounded">{rentalCode}</span>
+                </a>
+              ) : (
+                <a 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePaymentInitiate();
+                  }}
+                  className="bg-[#0070BA] hover:bg-[#003087] text-white font-medium py-2 px-4 rounded flex items-center justify-center"
+                >
+                  <img 
+                    src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
+                    alt="PayPal" 
+                    className="h-5 mr-2"
+                  />
+                  Pay with PayPal (GBP {totalPrice.toFixed(2)})
+                </a>
+              )}
             </div>
           ) : (
             <div className="mb-3 text-center p-2 bg-amber-50 text-amber-700 rounded-lg text-sm">

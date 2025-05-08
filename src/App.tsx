@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics";
 import AdminDashboard from "./pages/AdminDashboard";
 import Layout from "./components/Layout";
 import ProfileComplete from "./components/ProfileComplete";
+import Messages from "./pages/Messages"; // Add the Messages page import
 
 // Import footer page routes
 import AboutUs from "./pages/AboutUs";
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/settings" element={<Settings />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/messages" element={<Messages />} /> {/* Add the Messages route */}
               
               {/* Footer Pages */}
               <Route path="/about" element={<AboutUs />} />
