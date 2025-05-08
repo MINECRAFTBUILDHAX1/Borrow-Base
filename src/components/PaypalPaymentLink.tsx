@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 
@@ -9,12 +10,10 @@ interface PaypalPaymentLinkProps {
 }
 
 const PaypalPaymentLink = ({ amount, currency, rentalCode, disabled = false }: PaypalPaymentLinkProps) => {
-  // Ensure amount is properly formatted to 2 decimal places
-  const formattedAmount = amount.toFixed(2); // Ensures that we have a value like "9.99" instead of "9.9"
-
-  // PayPal URL: Make sure it's properly formatted
-  const paypalDemoUrl = `https://www.paypal.com/paypalme/borrowbase/${formattedAmount}`;
-
+  // For a real implementation, this would be generated from your backend
+  // This is just a placeholder that opens PayPal in a new window
+  const paypalDemoUrl = `https://www.paypal.com/paypalme/borrowbase/${amount}`;
+  
   return (
     <Button 
       variant="outline" 
