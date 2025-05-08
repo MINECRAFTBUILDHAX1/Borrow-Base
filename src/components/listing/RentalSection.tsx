@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,7 @@ interface RentalSectionProps {
   listing: {
     price_per_day: number;
     security_deposit: number;
-  };
+  } | null; // Explicitly allow null for listing
   startDate: Date | null;
   endDate: Date | null;
   totalPrice: number | null;
@@ -38,13 +37,17 @@ const RentalSection = ({
   handleContactOwner,
   rentalCode
 }: RentalSectionProps) => {
+  // Ensure listing is not null or undefined
+  const pricePerDay = listing ? listing.price_per_day : 0; // Default to 0 if listing is null or undefined
+  const securityDeposit = listing ? listing.security_deposit : 0; // Same for security deposit
+
   return (
     <div className="sticky top-20">
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="text-2xl font-semibold">
-              £{listing.price_per_day}<span className="text-base font-normal text-gray-600">/day</span>
+              £{pricePerDay}<span className="text-base font-normal text-gray-600">/day</span>
             </p>
             <Badge variant="outline" className="bg-brand-pastel-green text-gray-800 font-normal">
               Available Now
@@ -114,11 +117,11 @@ const RentalSection = ({
               </div>
             )}
             
-            {listing.security_deposit > 0 && (
+            {securityDeposit > 0 && (
               <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
                 <ShieldCheck className="h-5 w-5 text-gray-500" />
                 <div>
-                  <p className="text-sm font-medium">£{listing.security_deposit} security deposit</p>
+                  <p className="text-sm font-medium">£{securityDeposit} security deposit</p>
                   <p className="text-xs text-gray-600">Will be refunded after successful return</p>
                 </div>
               </div>
