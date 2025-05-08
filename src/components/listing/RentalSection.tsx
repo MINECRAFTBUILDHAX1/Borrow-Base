@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ interface RentalSectionProps {
   listing: {
     price_per_day: number;
     security_deposit: number;
-  } | null; // Explicitly allow null for listing
+  };
   startDate: Date | null;
   endDate: Date | null;
   totalPrice: number | null;
@@ -37,17 +38,13 @@ const RentalSection = ({
   handleContactOwner,
   rentalCode
 }: RentalSectionProps) => {
-  // Ensure listing is not null or undefined
-  const pricePerDay = listing ? listing.price_per_day : 0; // Default to 0 if listing is null or undefined
-  const securityDeposit = listing ? listing.security_deposit : 0; // Same for security deposit
-
   return (
     <div className="sticky top-20">
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="text-2xl font-semibold">
-              £{pricePerDay}<span className="text-base font-normal text-gray-600">/day</span>
+              £{listing.price_per_day}<span className="text-base font-normal text-gray-600">/day</span>
             </p>
             <Badge variant="outline" className="bg-brand-pastel-green text-gray-800 font-normal">
               Available Now
@@ -109,19 +106,14 @@ const RentalSection = ({
                 <p className="text-xs text-gray-500">
                   For {Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
                 </p>
-                {rentalCode && (
-                  <p className="mt-2 text-sm font-medium text-center text-brand-purple">
-                    Your rental code: {rentalCode}
-                  </p>
-                )}
               </div>
             )}
             
-            {securityDeposit > 0 && (
+            {listing.security_deposit > 0 && (
               <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
                 <ShieldCheck className="h-5 w-5 text-gray-500" />
                 <div>
-                  <p className="text-sm font-medium">£{securityDeposit} security deposit</p>
+                  <p className="text-sm font-medium">£{listing.security_deposit} security deposit</p>
                   <p className="text-xs text-gray-600">Will be refunded after successful return</p>
                 </div>
               </div>
@@ -130,39 +122,24 @@ const RentalSection = ({
           
           {/* Payment link - only show if dates are selected */}
           {startDate && endDate && totalPrice ? (
-            <div className="mb-3">
-              {rentalCode ? (
-                <a 
-                  href={`https://paypal.me/1millionjourney/${totalPrice}`}
-                  className="bg-[#0070BA] hover:bg-[#003087] text-white font-medium py-2 px-4 rounded flex items-center justify-center"
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  <img 
-                    src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
-                    alt="PayPal" 
-                    className="h-5 mr-2"
-                  />
-                  Pay with PayPal (GBP {totalPrice.toFixed(2)})
-                  <span className="ml-2 text-sm bg-white/20 px-1 rounded">{rentalCode}</span>
-                </a>
-              ) : (
-                <a 
-                  href="#" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handlePaymentInitiate();
-                  }}
-                  className="bg-[#0070BA] hover:bg-[#003087] text-white font-medium py-2 px-4 rounded flex items-center justify-center"
-                >
-                  <img 
-                    src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
-                    alt="PayPal" 
-                    className="h-5 mr-2"
-                  />
-                  Pay with PayPal (GBP {totalPrice.toFixed(2)})
-                </a>
-              )}
+            <div 
+              onClick={handlePaymentInitiate}
+              className="mb-3"
+            >
+              <a 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  handlePaymentInitiate();
+                }}
+                className="block"
+              >
+                <PaypalPaymentLink 
+                  amount={totalPrice} 
+                  currency="GBP" 
+                  rentalCode={rentalCode || undefined}
+                />
+              </a>
             </div>
           ) : (
             <div className="mb-3 text-center p-2 bg-amber-50 text-amber-700 rounded-lg text-sm">
