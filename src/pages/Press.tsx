@@ -16,8 +16,8 @@ const Press = () => {
               For press inquiries, please contact:
             </p>
             <p className="mb-4">
-              <strong>Email:</strong> press@borrowbase.co.uk<br />
-              <strong>Phone:</strong> +44 020 1234 5678
+              <strong>Email:</strong> info@borrowbase.co.uk<br />
+              
             </p>
           </section>
           
