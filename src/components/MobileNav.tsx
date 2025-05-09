@@ -104,7 +104,20 @@ const MobileNav = () => {
           <PlusCircle className="h-5 w-5" />
           <span className="text-xs mt-1">List</span>
         </Link>
-       >
+        <Link
+          to="/messages"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/messages") ? "text-brand-purple" : "text-gray-500"
+          } relative`}
+        >
+          <MessageCircle className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-red-500">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </Badge>
+          )}
+          
+        </Link>
         <Link
           to="/profile/me"
           className={`flex flex-col items-center justify-center ${
