@@ -186,8 +186,7 @@ const ListingDetails = () => {
     setIsSubmitting(true);
     
     try {
-      // Create the rental without specifying rental_code field
-      // Database trigger will generate rental_code automatically using the generate_rental_code() function
+      // Create the rental - note that rental_code is generated on the server via a trigger
       const { data: rentalData, error } = await supabase
         .from('rentals')
         .insert({
@@ -200,7 +199,7 @@ const ListingDetails = () => {
           currency: "GBP",
           status: "waiting_for_payment"
         })
-        .select('id, rental_code') // Get back the id and rental code
+        .select('id, rental_code')
         .single();
       
       if (error) throw error;
@@ -265,7 +264,7 @@ const ListingDetails = () => {
             </div>
           </div>
           
-          <ImageGallery images={listing.images} />
+          <ImageGallery images={listing.images} title={listing.title} />
           
           <Card className="p-6">
             <div className="flex items-center gap-4">
@@ -308,38 +307,59 @@ const ListingDetails = () => {
         
         {/* Right column: Booking widget */}
         <div className="w-full lg:w-4/12">
-          <div className="sticky top-24">
+          {listing && (
             <RentalSection
-              pricePerDay={listing.price_per_day}
-              securityDeposit={listing.security_deposit}
-              bookedRanges={bookedDateRanges}
-              onDateChange={handleDateChange}
-              onBookNow={handleBookNow}
-              isSubmitting={isSubmitting}
-              rentalDays={rentalDays}
+              listing={listing}
+              startDate={startDate}
+              endDate={endDate}
               totalPrice={totalPrice}
-              isOwner={user?.id === listing.user_id}
+              handleDateSelect={(date) => {
+                if (!startDate || (startDate && endDate)) {
+                  setStartDate(date || null);
+                  setEndDate(null);
+                  handleDateChange(date || null, null);
+                } else {
+                  setEndDate(date || null);
+                  handleDateChange(startDate, date || null);
+                }
+              }}
+              isDateDisabled={(date) => {
+                return bookedDateRanges.some(range => 
+                  date >= range.start && date <= range.end
+                );
+              }}
+              handlePaymentInitiate={handleBookNow}
+              handleContactOwner={() => {
+                if (!user) {
+                  toast({
+                    title: "Login required",
+                    description: "Please log in to contact the lender",
+                  });
+                  navigate("/auth");
+                  return;
+                }
+                // Add contact owner logic here
+              }}
+              rentalCode={rentalCode}
             />
-            
-            {listing.category && (
-              <div className="mt-4 p-4 border rounded-lg">
-                <p className="text-sm font-medium mb-2">Category</p>
-                <Badge variant="outline" className="bg-gray-100">
-                  {listing.category}
-                </Badge>
-              </div>
-            )}
-          </div>
+          )}
+          
+          {listing?.category && (
+            <div className="mt-4 p-4 border rounded-lg">
+              <p className="text-sm font-medium mb-2">Category</p>
+              <Badge variant="outline" className="bg-gray-100">
+                {listing.category}
+              </Badge>
+            </div>
+          )}
         </div>
       </div>
       
       {/* Success Dialog */}
-      {showSuccessDialog && (
+      {showSuccessDialog && createdRentalId && (
         <PaymentSuccessDialog
           open={showSuccessDialog}
           onOpenChange={setShowSuccessDialog}
-          amount={totalPrice}
-          currency="GBP"
           rentalCode={rentalCode || ""}
           rentalId={createdRentalId || ""}
         />

@@ -9,15 +9,15 @@ import {
 
 interface ImageGalleryProps {
   images: string[];
-  title: string;
+  title?: string;
 }
 
-const ImageGallery = ({ images, title }: ImageGalleryProps) => {
+const ImageGallery = ({ images, title = "Item" }: ImageGalleryProps) => {
   return (
     <div className="mb-8">
       <Carousel className="w-full">
         <CarouselContent>
-          {images.map((image: string, index: number) => (
+          {images?.map((image: string, index: number) => (
             <CarouselItem key={index} className="md:basis-2/3 lg:basis-1/2">
               <div className="p-1">
                 <div className="overflow-hidden rounded-lg">

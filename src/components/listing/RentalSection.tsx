@@ -10,12 +10,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import PaypalPaymentLink from "@/components/PaypalPaymentLink";
 
 interface RentalSectionProps {
   listing: {
     price_per_day: number;
-    security_deposit: number;
+    security_deposit: number | null;
   };
   startDate: Date | null;
   endDate: Date | null;
@@ -38,13 +37,26 @@ const RentalSection = ({
   handleContactOwner,
   rentalCode
 }: RentalSectionProps) => {
+  // Add safety check for listing
+  if (!listing) {
+    return (
+      <div className="sticky top-20">
+        <Card>
+          <CardContent className="p-6">
+            <p>Loading listing details...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="sticky top-20">
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="text-2xl font-semibold">
-£{listing?.price_per_day || 'N/A'}<span className="text-base font-normal text-gray-600">/day</span>
+              £{listing.price_per_day || 'N/A'}<span className="text-base font-normal text-gray-600">/day</span>
             </p>
             <Badge variant="outline" className="bg-brand-pastel-green text-gray-800 font-normal">
               Available Now
@@ -114,7 +126,8 @@ const RentalSection = ({
               </div>
             )}
             
-            {listing.security_deposit > 0 && (
+            {/* Add a null check for security_deposit */}
+            {listing.security_deposit && listing.security_deposit > 0 && (
               <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
                 <ShieldCheck className="h-5 w-5 text-gray-500" />
                 <div>

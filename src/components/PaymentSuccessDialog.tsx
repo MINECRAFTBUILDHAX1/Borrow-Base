@@ -1,87 +1,97 @@
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, MessageCircle, Copy } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { CheckCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 
-interface PaymentSuccessDialogProps {
+export interface PaymentSuccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onContactSeller: () => void;
-  listingTitle: string;
-  rentalCode?: string;
+  rentalCode: string;
+  rentalId: string;
 }
 
 const PaymentSuccessDialog = ({
   open,
   onOpenChange,
-  onContactSeller,
-  listingTitle,
-  rentalCode
+  rentalCode,
+  rentalId,
 }: PaymentSuccessDialogProps) => {
-  const { toast } = useToast();
-  
+  const [copied, setCopied] = useState(false);
+
   const copyToClipboard = () => {
-    if (rentalCode) {
-      navigator.clipboard.writeText(rentalCode);
-      toast({
-        title: "Copied to clipboard",
-        description: "Rental code has been copied to your clipboard",
-      });
-    }
+    navigator.clipboard.writeText(rentalCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex justify-center mb-2">
-            <CheckCircle2 className="h-12 w-12 text-green-500" />
+          <div className="mx-auto">
+            <CheckCircle className="h-12 w-12 text-green-500" strokeWidth={1.5} />
           </div>
-          <DialogTitle className="text-center">Payment Initiated!</DialogTitle>
+          <DialogTitle className="text-center text-xl">Payment Initiated</DialogTitle>
           <DialogDescription className="text-center">
-            Your payment for "{listingTitle}" has been initiated through PayPal.
+            Your booking has been created successfully. Please complete the payment to secure the rental.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
-            <p className="font-medium text-amber-800 mb-2">Important:</p>
-            <p className="text-amber-700 mb-2">
-              Please include your rental code in your PayPal payment note:
-            </p>
-            {rentalCode && (
-              <div className="flex items-center justify-center bg-white p-2 rounded border border-amber-200">
-                <span className="font-mono font-bold text-lg">{rentalCode}</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={copyToClipboard} 
-                  className="ml-2 h-8 w-8 p-0"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            <p className="text-amber-700 mt-2 text-sm">
-              Your rental will be confirmed once the payment is verified.
+        
+        <div className="flex flex-col items-center justify-center space-y-4 py-4">
+          <div className="text-center">
+            <p className="font-medium text-gray-700">Your rental code</p>
+            <div className="mt-1 flex items-center justify-center gap-2">
+              <span className="text-2xl font-bold text-brand-purple">{rentalCode}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={copyToClipboard}
+                className={copied ? "text-green-500" : ""}
+              >
+                {copied ? "Copied!" : "Copy"}
+              </Button>
+            </div>
+            <p className="mt-4 text-sm text-gray-500">
+              Please keep this code for reference. You'll need it when collecting the item.
             </p>
           </div>
         </div>
-        <DialogFooter className="sm:justify-center">
+
+        <DialogFooter className="flex flex-col sm:flex-row sm:justify-center gap-2">
           <Button 
-            onClick={onContactSeller} 
-            className="w-full sm:w-auto flex items-center gap-2"
+            asChild
+            variant="default"
+            className="w-full sm:w-auto"
           >
-            <MessageCircle className="h-4 w-4" />
-            Contact Seller Now
+            <a 
+              href={`https://paypal.me/1millionjourney/${rentalCode}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2"
+            >
+              <img 
+                src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
+                alt="PayPal" 
+                className="h-5"
+              />
+              Make Payment Now
+            </a>
+          </Button>
+          <Button 
+            asChild
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            <Link to="/messages">View Messages</Link>
           </Button>
         </DialogFooter>
       </DialogContent>
