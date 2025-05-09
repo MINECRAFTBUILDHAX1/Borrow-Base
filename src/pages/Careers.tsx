@@ -16,7 +16,7 @@ const Careers = () => {
           
           <h2 className="text-2xl font-semibold mt-8 mb-4">Current Openings</h2>
           <p className="mb-4 text-gray-600">
-            We don't have any open positions at the moment. Please check back later or send your CV to careers@borrowbase.co.uk to be considered for future opportunities.
+            We don't have any open positions at the moment. Please check back later or send your CV to support@borrowbase.co.uk to be considered for future opportunities.
           </p>
           
           <h2 className="text-2xl font-semibold mt-8 mb-4">Why Work With Us</h2>
@@ -31,7 +31,7 @@ const Careers = () => {
           <div className="bg-gray-50 p-6 rounded-lg mt-8">
             <h3 className="text-xl font-semibold mb-2">Get in Touch</h3>
             <p>
-              Don't see a role that matches your skills? We're always interested in hearing from talented individuals. Send your CV to careers@borrowbase.co.uk.
+              Don't see a role that matches your skills? We're always interested in hearing from talented individuals. Send your CV to support@borrowbase.co.uk.
             </p>
           </div>
         </div>
