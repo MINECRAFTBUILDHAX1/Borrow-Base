@@ -25,7 +25,7 @@ const Press = () => {
             <h2 className="text-2xl font-semibold mb-4">Press Releases</h2>
             <div className="space-y-6">
               <div className="border-b pb-4">
-                <p className="text-sm text-gray-500">May 1, 2023</p>
+                <p className="text-sm text-gray-500">May 9, 2025</p>
                 <h3 className="text-xl font-medium">BorrowBase Launches in the UK, Revolutionizing the Way People Rent Items</h3>
                 <p className="mt-1 text-gray-700">The peer-to-peer rental platform connects lenders and borrowers to make item rentals easy, affordable, and accessible.</p>
               </div>
