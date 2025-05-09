@@ -45,12 +45,12 @@ const HowItWorks = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <span className="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-brand-purple">3</span>
-              Contact the lender
+              The one!
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600">
-              Use the "Contact Lender" button to send an email directly to the item owner. Your default email client will open with a pre-populated message.
+             You find the item you have been needing for weeks, maybe even months!
             </p>
           </CardContent>
         </Card>
