@@ -1,8 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ListingsTab from "./ListingsTab";
-import RentalsTab from "./RentalsTab";
-import ReviewsTab from "./ReviewsTab";
 import { ListingProps } from "@/components/ListingCard";
 
 interface Review {
