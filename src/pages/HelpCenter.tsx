@@ -33,14 +33,14 @@ const HelpCenter = () => {
             <div className="border-b pb-4">
               <h3 className="text-xl font-medium mb-2">What if an item is damaged during rental?</h3>
               <p>
-                We recommend that lenders and borrowers thoroughly document the condition of items before and after rental. If an item is damaged, the lender should contact BorrowBase Support at <a href="mail<strong>mmajcherczykolczak@gmail.com?subject=BorrowBase Support Query"</strong>to resolve the issue. If an agreement can't be reached, contact our support team for assistance.
+                We recommend that lenders and borrowers thoroughly document the condition of items before and after rental. If an item is damaged, the lender should contact BorrowBase Support at <a href="mailto:mmajcherczykolczak@gmail.com?subject=BorrowBase Support Query" className="font-semibold text-blue-600 underline">mmajcherczykolczak@gmail.com</a>to resolve the issue. If an agreement can't be reached, contact our support team for assistance.
               </p>
             </div>
             
             <div className="border-b pb-4">
               <h3 className="text-xl font-medium mb-2">How do I cancel a rental?</h3>
               <p>
-                If you need to cancel a rental, you can do so by emailing support at <a href="mail<strong>mmajcherczykolczak@gmail.com?subject=BorrowBase Support Query"</strong> (Please note that cancellation policies vary depending on how close to the rental period you cancel. For more information, see our Cancellation Policy page.
+                If you need to cancel a rental, you can do so by emailing support at <a href="mailto:mmajcherczykolczak@gmail.com?subject=BorrowBase Support Query" className="font-semibold text-blue-600 underline">mmajcherczykolczak@gmail.com</a> (Please note that cancellation policies vary depending on how close to the rental period you cancel. For more information, see our Cancellation Policy page.
               </p>
             </div>
           </div>
