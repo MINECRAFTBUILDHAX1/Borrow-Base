@@ -153,8 +153,6 @@ const Explore = () => {
               ? listing.images[0] 
               : "https://via.placeholder.com/300x200?text=No+Image",
             location: listing.location || "No location",
-            rating: listing.average_rating || 0,
-            reviewCount: listing.review_count || 0,
             category: listing.category || "Other",
             distance: 0 // Would be calculated in a real app
           }));
