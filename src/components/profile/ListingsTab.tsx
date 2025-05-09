@@ -36,8 +36,6 @@ const ListingsTab = ({ listings: initialListings, userName, isOwnProfile, userId
             priceUnit: 'day' as const,
             imageUrl: item.images?.[0] || 'https://via.placeholder.com/300',
             location: item.location,
-            rating: item.average_rating || 0,
-            reviewCount: item.review_count || 0,
             category: item.category,
             userId: item.user_id
           }));
