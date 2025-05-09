@@ -13,7 +13,7 @@ const Footer = () => {
           <BorrowBaseLogo />
         </div>
         <div className="text-xs text-gray-500 mb-4">
-          &copy; {new Date().getFullYear()} BorrowBase. All rights reserved.
+           {new Date().getFullYear()} Majcherczyk Digital. All rights reserved.
         </div>
       </footer>
     );
