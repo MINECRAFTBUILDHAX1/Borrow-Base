@@ -51,7 +51,7 @@ const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [listing, setListing] = useState<Listing | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
-  const [ownerEmail, setOwnerEmail] = useState<string | null>(null);
+  const [email, setemail] = useState<string | null>(null);
   const [bookedDateRanges, setBookedDateRanges] = useState<BookedDateRange[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -105,7 +105,7 @@ const ListingDetails = () => {
             console.error("Error fetching owner profile:", profileError);
           } else if (profileData) {
             setOwner(profileData as Profile);
-            setOwnerEmail(profileData.email);
+            setemail(profileData.email);
           }
           
           // Fetch booked date ranges
@@ -347,7 +347,7 @@ const ListingDetails = () => {
           {listing && (
             <RentalSection
               listing={listing}
-              ownerEmail={ownerEmail}
+              email={email}
               startDate={startDate}
               endDate={endDate}
               totalPrice={totalPrice}
