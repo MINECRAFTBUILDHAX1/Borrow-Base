@@ -280,10 +280,6 @@ const ListingDetails = () => {
     );
   }
   
-  const ownerDisplayName = owner?.username || owner?.full_name || "User";
-  const formattedMemberSince = owner?.created_at ? 
-    new Date(owner.created_at).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}) : 
-    "Recently joined";
   
   return (
     <div className="container mx-auto py-8 px-4">
