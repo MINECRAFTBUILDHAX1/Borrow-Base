@@ -116,7 +116,7 @@ const MobileNav = () => {
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
-          <span className="text-xs mt-1">Messages</span>
+          
         </Link>
         <Link
           to="/profile/me"
