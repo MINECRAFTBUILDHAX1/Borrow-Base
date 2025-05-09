@@ -305,12 +305,7 @@ const handleLocationChange = (address: string, details?: { lat: number; lng: num
 />
 
                  
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+     
           <FormField
             control={profileForm.control}
             name="paypalEmail"
