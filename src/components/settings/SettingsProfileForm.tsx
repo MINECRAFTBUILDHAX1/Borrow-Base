@@ -12,13 +12,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import LocationInput from "@/components/LocationInput";
-import { GOOGLE_MAPS_API_KEY } from "@/config/api-keys";
-import { useLocation, useSearchParams } from "react-router-dom";
+
+
 const profileSchema = z.object({
   fullName: z.string().min(1, { message: "Name is required" }),
   bio: z.string().optional(),
-  location: z.string().optional(),
+
   paypalEmail: z.string().email({ message: "Invalid PayPal email address" }).optional().or(z.literal('')),
 });
 
@@ -28,10 +27,8 @@ const SettingsProfileForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
   const [paypalSaved, setPaypalSaved] = useState(false);
-  const [location, setLocation] = useState("");
-  const [loadingLocation, setLoadingLocation] = useState(false);
-  const [locationDetails, setLocationDetails] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -41,53 +38,13 @@ const SettingsProfileForm = () => {
       setAvatarUrl(user.user_metadata.avatar_url);
     }
   }, [user]);
-const handleLocationChange = (address: string, details?: { lat: number; lng: number }) => {
-    setLocationQuery(address);
-    if (details) {
-      // Use the coordinates if needed
-      console.log("Selected coordinates:", details);
-      handleSearch();
-    }
-  };
-  
-  // Get search parameters from URL on initial load
-  useEffect(() => {
-    const category = searchParams.get("category");
-    if (category) {
-      setSelectedCategory(category);
-    }
-    
-    const search = searchParams.get("search");
-    if (search) {
-      setSearchQuery(search);
-    }
-    
-    const loc = searchParams.get("location");
-    if (loc) {
-      setLocationQuery(loc);
-    }
-    
-    const min = searchParams.get("min");
-    if (min) {
-      setPriceMin(parseFloat(min));
-    }
-    
-    const max = searchParams.get("max");
-    if (max) {
-      setPriceMax(parseFloat(max));
-    }
-    
-    const sort = searchParams.get("sort");
-    if (sort) {
-      setSortBy(sort);
-    }
-  }, []);
+
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       fullName: user?.user_metadata?.full_name || "",
       bio: user?.user_metadata?.bio || "",
-      location: user?.user_metadata?.location || "",
+  
       paypalEmail: user?.user_metadata?.paypal_email || "",
     },
   });
@@ -97,7 +54,7 @@ const handleLocationChange = (address: string, details?: { lat: number; lng: num
     if (user) {
       profileForm.setValue('fullName', user.user_metadata?.full_name || "");
       profileForm.setValue('bio', user.user_metadata?.bio || "");
-      profileForm.setValue('location', user.user_metadata?.location || "");
+   
       profileForm.setValue('paypalEmail', user.user_metadata?.paypal_email || "");
     }
   }, [user, profileForm]);
@@ -118,7 +75,7 @@ const handleLocationChange = (address: string, details?: { lat: number; lng: num
         data: {
           full_name: values.fullName,
           bio: values.bio,
-          location: values.location,
+       
           paypal_email: values.paypalEmail,
           profile_completed: true,
         },
@@ -210,7 +167,7 @@ const handleLocationChange = (address: string, details?: { lat: number; lng: num
     }
   };
 
- 
+
 
   return (
     <div className="mb-6">
@@ -281,31 +238,9 @@ const handleLocationChange = (address: string, details?: { lat: number; lng: num
               </FormItem>
             )}
           />
-         <FormField
-  control={profileForm.control}
-  name="location"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Location</FormLabel>
-      <LocationInput
-        value={field.value}
-        onChange={(value, details) => {
-          field.onChange(value); // updates the form's value
-          if (details) {
-            profileForm.setValue("locationDetails", {
-              lat: details.lat,
-              lng: details.lng,
-            });
-          }
-        }}
-        placeholder="Enter your city or neighborhood"
-      />
-    </FormItem>
-  )}
-/>
+          
 
-                 
-     
+
           <FormField
             control={profileForm.control}
             name="paypalEmail"
@@ -337,8 +272,7 @@ const handleLocationChange = (address: string, details?: { lat: number; lng: num
             )}
           />
           
-        
-          )}
+
           
           <Button type="submit" disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Changes"}
