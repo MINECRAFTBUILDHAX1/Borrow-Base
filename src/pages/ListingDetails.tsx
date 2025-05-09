@@ -317,16 +317,7 @@ const ListingDetails = () => {
                 <p className="text-sm text-gray-500">Member since {formattedMemberSince}</p>
               </div>
               <div className="ml-auto">
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  asChild
-                >
-                  <Link to={`/profile/${owner?.id || ''}`}>
-                    <User className="h-4 w-4" />
-                    <span>View profile</span>
-                  </Link>
-                </Button>
+               
               </div>
             </div>
           </Card>
