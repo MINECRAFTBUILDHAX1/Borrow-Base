@@ -19,7 +19,7 @@ interface RentalSectionProps {
     security_deposit: number | null;
     title: string;
   };
-  ownerEmail: string | null;
+  email: string | null;
   startDate: Date | null;
   endDate: Date | null;
   totalPrice: number | null;
@@ -31,7 +31,7 @@ interface RentalSectionProps {
 
 const RentalSection = ({
   listing,
-  ownerEmail,
+  email,
   startDate,
   endDate,
   totalPrice,
@@ -57,10 +57,10 @@ const RentalSection = ({
     Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 : 0;
 
   const handleContactOwner = () => {
-    if (!ownerEmail) {
+    if (!email) {
       toast({
         title: "Error",
-        description: "Could not find owner's email address",
+        description: "Could not find Lender's email address",
         variant: "destructive"
       });
       return;
@@ -69,7 +69,7 @@ const RentalSection = ({
     const subject = `Inquiry about: ${listing.title}`;
     const body = `Hello,\n\nI'm interested in renting your item: ${listing.title}.\n\nPlease let me know if it's available for the dates I'm looking for.\n\nThank you!`;
     
-    window.location.href = `mailto:${ownerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   return (
