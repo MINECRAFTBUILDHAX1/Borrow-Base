@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
-import MessagingDialog from "@/components/MessagingDialog";
 import { Link } from "react-router-dom";
 
 interface Rental {
