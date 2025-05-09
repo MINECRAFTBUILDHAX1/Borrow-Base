@@ -1,33 +1,3 @@
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, MessageCircle, Mail, ShieldCheck } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { toast } from "@/hooks/use-toast";
-
-interface RentalSectionProps {
-  listing: {
-    price_per_day: number;
-    security_deposit: number | null;
-    title: string;
-  };
-  email: string | null;
-  startDate: Date | null;
-  endDate: Date | null;
-  totalPrice: number | null;
-  handleDateSelect: (date: Date | undefined) => void;
-  isDateDisabled: (date: Date) => boolean;
-  handlePaymentInitiate: () => void;
-  rentalCode?: string | null;
-}
-
 const RentalSection = ({
   listing,
   email,
@@ -55,8 +25,6 @@ const RentalSection = ({
   const days = startDate && endDate ? 
     Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 : 0;
 
-  
-
   return (
     <div className="sticky top-20">
       <Card>
@@ -70,8 +38,8 @@ const RentalSection = ({
             </Badge>
           </div>
           
-          {/* Date selection */}
-          <div className="space-y-4 mb-6">
+          {/* Add margin-top to move the date selection lower */}
+          <div className="space-y-4 mb-6 mt-8">
             <div>
               <p className="font-medium mb-2">Select dates</p>
               <div className="grid grid-cols-2 gap-2">
@@ -146,8 +114,6 @@ const RentalSection = ({
             )}
           </div>
           
-   
-          
           {/* Payment link - only show if dates are selected */}
           {startDate && endDate && totalPrice ? (
             <div className="mb-3">
@@ -194,5 +160,3 @@ const RentalSection = ({
     </div>
   );
 };
-
-export default RentalSection;
