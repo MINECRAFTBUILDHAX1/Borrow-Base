@@ -6,7 +6,7 @@ const PrivacyPolicy = () => {
         <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
         
         <div className="prose max-w-none">
-          <p className="text-gray-500 mb-6">Last updated: May 6, 2023</p>
+          <p className="text-gray-500 mb-6">Last updated: May 9, 2025</p>
           
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
@@ -85,7 +85,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">8. Contact Us</h2>
             <p>
-              If you have any questions about this Privacy Policy, please contact us at privacy@borrowbase.co.uk.
+              If you have any questions about this Privacy Policy, please contact us at info@borrowbase.co.uk.
             </p>
           </section>
         </div>
