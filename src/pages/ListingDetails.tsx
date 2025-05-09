@@ -253,10 +253,7 @@ const ListingDetails = () => {
       return;
     }
     
-    toast({
-      title: "Coming soon",
-      description: "Review feature will be available soon",
-    });
+
   };
 
   if (loading) {
