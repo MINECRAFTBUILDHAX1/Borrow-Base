@@ -55,7 +55,10 @@ const ProfileHeader = ({ userData, isOwnProfile }: ProfileHeaderProps) => {
                 </span>
               )}
             </div>
-            <p className="text-gray-600 text-sm">Member since {userData.memberSince} • {userData.location}</p>
+            <p className="text-gray-600 text-sm">
+              {userData.memberSince !== "Invalid Date" ? `Member since ${userData.memberSince}` : "Recently joined"} 
+              {userData.location ? ` • ${userData.location}` : ''}
+            </p>
           </div>
           
           {isOwnProfile ? (

@@ -61,22 +61,14 @@ const MobileNav = () => {
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('is_read', false)
-        .neq('sender_id', user.id || '')
-        .not('conversation_id', 'is', null);
-
-      const { count: rentalCount, error: rentalError } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_read', false)
-        .neq('sender_id', user.id || '')
-        .not('rental_id', 'is', null);
+        .neq('sender_id', user.id || '');
         
-      if (convError || rentalError) {
-        console.error("Error fetching unread counts:", convError || rentalError);
+      if (convError) {
+        console.error("Error fetching unread counts:", convError);
         return;
       }
       
-      setUnreadCount((conversationCount || 0) + (rentalCount || 0));
+      setUnreadCount(conversationCount || 0);
     } catch (error) {
       console.error('Error fetching unread messages:', error);
     }

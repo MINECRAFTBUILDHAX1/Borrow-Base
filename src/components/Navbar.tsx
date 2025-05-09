@@ -65,26 +65,18 @@ const Navbar = () => {
       if (!user) return;
       
       // Count unread messages where the user is the recipient
-      const { count: conversationCount, error: convError } = await supabase
+      const { count, error } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('is_read', false)
-        .neq('sender_id', user.id || '')
-        .not('conversation_id', 'is', null);
-
-      const { count: rentalCount, error: rentalError } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_read', false)
-        .neq('sender_id', user.id || '')
-        .not('rental_id', 'is', null);
+        .neq('sender_id', user.id || '');
         
-      if (convError || rentalError) {
-        console.error("Error fetching unread counts:", convError || rentalError);
+      if (error) {
+        console.error("Error fetching unread counts:", error);
         return;
       }
       
-      setUnreadCount((conversationCount || 0) + (rentalCount || 0));
+      setUnreadCount(count || 0);
     } catch (error) {
       console.error('Error fetching unread messages:', error);
     }

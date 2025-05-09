@@ -40,7 +40,7 @@ const Profile = () => {
             .from('profiles')
             .select('*')
             .eq('id', userId)
-            .single();
+            .maybeSingle();
             
           if (!profileError && profileData) {
             profile = profileData;
@@ -68,6 +68,7 @@ const Profile = () => {
               });
             } catch (error) {
               console.error("Error formatting date:", error);
+              memberSince = "Recently joined";
             }
           }
           

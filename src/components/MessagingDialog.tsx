@@ -1,9 +1,9 @@
+
 import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogClose
@@ -318,8 +318,7 @@ const MessagingDialog = ({
           conversation_id: currentConversationId,
           sender_id: user.id,
           message: messageText,
-          is_read: false,
-          rental_id: null
+          is_read: false
         };
       } else {
         throw new Error("No conversation or rental ID available");
@@ -384,6 +383,13 @@ const MessagingDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md md:max-w-lg max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Chat with {recipientName}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Send and receive messages with {recipientName}
+          </DialogDescription>
+        </DialogHeader>
+        
         <div className="flex items-center gap-3 pb-3 border-b">
           <Avatar className="h-10 w-10">
             <AvatarImage src={recipientImage} />

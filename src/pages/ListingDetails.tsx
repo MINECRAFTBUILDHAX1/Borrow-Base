@@ -8,13 +8,14 @@ import RentalSection from "@/components/listing/RentalSection";
 import ListingDetailInfo from "@/components/listing/ListingDetailInfo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Star, User } from "lucide-react";
+import { Star, User, MessageCircle, PenSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import PaymentSuccessDialog from "@/components/PaymentSuccessDialog";
+import MessagingDialog from "@/components/MessagingDialog";
 
 interface Listing {
   id: string;
@@ -60,6 +61,7 @@ const ListingDetails = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [createdRentalId, setCreatedRentalId] = useState<string | null>(null);
   const [rentalCode, setRentalCode] = useState<string | null>(null);
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -78,7 +80,16 @@ const ListingDetails = () => {
           .eq('id', id)
           .single();
           
-        if (listingError) throw listingError;
+        if (listingError) {
+          console.error("Error fetching listing data:", listingError);
+          toast({
+            title: "Error",
+            description: "Failed to load listing details",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
         
         if (listingData) {
           setListing(listingData as Listing);
@@ -88,11 +99,11 @@ const ListingDetails = () => {
             .from('profiles')
             .select('*')
             .eq('id', listingData.user_id)
-            .single();
+            .maybeSingle();
             
-          if (profileError) throw profileError;
-          
-          if (profileData) {
+          if (profileError) {
+            console.error("Error fetching owner profile:", profileError);
+          } else if (profileData) {
             setOwner(profileData as Profile);
           }
           
@@ -103,15 +114,21 @@ const ListingDetails = () => {
             .eq('listing_id', id)
             .in('status', ['waiting_for_payment', 'paid']);
             
-          if (rentalsError) throw rentalsError;
-          
-          if (rentalsData) {
+          if (rentalsError) {
+            console.error("Error fetching rental dates:", rentalsError);
+          } else if (rentalsData) {
             const ranges = rentalsData.map(rental => ({
               start: new Date(rental.start_date),
               end: new Date(rental.end_date)
             }));
             setBookedDateRanges(ranges);
           }
+        } else {
+          toast({
+            title: "Listing not found",
+            description: "The listing you're trying to view doesn't exist or has been removed.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error("Error fetching listing data:", error);
@@ -244,13 +261,22 @@ const ListingDetails = () => {
       return;
     }
     
-    navigate("/messages", { 
-      state: { 
-        recipientId: owner.id,
-        recipientName: owner.username || owner.full_name || "User",
-        listingId: listing.id,
-        listingTitle: listing.title
-      } 
+    setShowMessageDialog(true);
+  };
+
+  const handleReview = () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please log in to write a review",
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    toast({
+      title: "Coming soon",
+      description: "Review feature will be available soon",
     });
   };
 
@@ -281,7 +307,7 @@ const ListingDetails = () => {
   const ownerDisplayName = owner?.username || owner?.full_name || "User";
   const formattedMemberSince = owner?.created_at ? 
     new Date(owner.created_at).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}) : 
-    "Unknown";
+    "Recently joined";
   
   return (
     <div className="container mx-auto py-8 px-4">
@@ -341,12 +367,8 @@ const ListingDetails = () => {
             
             <div>
               <h2 className="text-xl font-semibold mb-3">Write a review</h2>
-              <Button variant="outline" onClick={() => {
-                toast({
-                  title: "Coming soon",
-                  description: "Review feature will be available soon",
-                });
-              }}>
+              <Button variant="outline" onClick={handleReview} className="flex items-center gap-2">
+                <PenSquare className="h-4 w-4" />
                 Write a Review
               </Button>
             </div>
@@ -400,6 +422,19 @@ const ListingDetails = () => {
           onOpenChange={setShowSuccessDialog}
           rentalCode={rentalCode || ""}
           rentalId={createdRentalId || ""}
+        />
+      )}
+
+      {/* Message Dialog */}
+      {showMessageDialog && listing && owner && (
+        <MessagingDialog
+          open={showMessageDialog}
+          onOpenChange={setShowMessageDialog}
+          recipientId={owner.id}
+          recipientName={ownerDisplayName}
+          recipientImage={owner.avatar_url || undefined}
+          listingId={listing.id}
+          listingTitle={listing.title}
         />
       )}
     </div>
