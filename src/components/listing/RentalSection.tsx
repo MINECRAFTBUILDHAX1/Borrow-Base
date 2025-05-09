@@ -10,7 +10,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
 interface RentalSectionProps {
@@ -78,7 +77,7 @@ const RentalSection = ({
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <p className="text-2xl font-semibold">
-              £{listing.price_per_day || 'N/A'}<span className="text-base font-normal text-gray-600">/day</span>
+              £{listing.price_per_day}<span className="text-base font-normal text-gray-600">/day</span>
             </p>
             <Badge variant="outline" className="bg-brand-pastel-green text-gray-800 font-normal">
               Available Now
@@ -101,7 +100,7 @@ const RentalSection = ({
                     <Calendar
                       mode="single"
                       selected={startDate ?? undefined}
-                      onSelect={(date) => handleDateSelect(date)}
+                      onSelect={handleDateSelect}
                       disabled={isDateDisabled}
                       className="p-3 pointer-events-auto"
                     />
@@ -119,7 +118,7 @@ const RentalSection = ({
                     <Calendar
                       mode="single"
                       selected={endDate ?? undefined}
-                      onSelect={(date) => handleDateSelect(date)}
+                      onSelect={handleDateSelect}
                       disabled={(date) => {
                         if (!startDate) return true;
                         return date < startDate || isDateDisabled(date);

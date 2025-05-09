@@ -51,7 +51,7 @@ const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [listing, setListing] = useState<Listing | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
-  const [email, setemail] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [bookedDateRanges, setBookedDateRanges] = useState<BookedDateRange[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -105,7 +105,9 @@ const ListingDetails = () => {
             console.error("Error fetching owner profile:", profileError);
           } else if (profileData) {
             setOwner(profileData as Profile);
-            setemail(profileData.email);
+            // Make sure we get the email
+            console.log("Profile data fetched:", profileData);
+            setEmail(profileData.email);
           }
           
           // Fetch booked date ranges
@@ -252,8 +254,6 @@ const ListingDetails = () => {
       navigate("/auth");
       return;
     }
-    
-
   };
 
   if (loading) {

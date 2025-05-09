@@ -54,7 +54,7 @@ const ListingCard = ({
             </div>
           </div>
           <p className="text-gray-500 text-sm mt-1">{location}</p>
-          {distance && (
+          {distance !== undefined && (
             <p className="text-gray-500 text-xs mt-1">{distance < 1 ? `${(distance * 1000).toFixed(0)}m away` : `${distance.toFixed(1)}km away`}</p>
           )}
           <p className="font-semibold mt-2">
