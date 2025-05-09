@@ -294,7 +294,6 @@ const ListingDetails = () => {
             <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
             <div className="flex items-center text-gray-600">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-              <span>5.0</span>
               <span className="mx-1">•</span>
               <span className="mx-1">•</span>
               <span>{listing.location}</span>
