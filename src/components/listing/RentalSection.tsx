@@ -68,6 +68,8 @@ const RentalSection = ({
     const subject = `Inquiry about: ${listing.title}`;
     const body = `Hello,\n\nI'm interested in renting your item: ${listing.title}.\n\nPlease let me know if it's available for the dates I'm looking for.\n\nThank you!`;
     
+    console.log("Email to contact:", email);
+
     window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
