@@ -62,11 +62,6 @@ const ListingDetails = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [createdRentalId, setCreatedRentalId] = useState<string | null>(null);
   const [rentalCode, setRentalCode] = useState<string | null>(null);
-  const [showAllReviews, setShowAllReviews] = useState(false);
-  const [showReviewDialog, setShowReviewDialog] = useState(false);
-  const [reviewText, setReviewText] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviews, setReviews] = useState<any[]>([]);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -250,25 +245,15 @@ const ListingDetails = () => {
     }
   };
 
-const handleSubmitReview = async () => {
+  const handleReview = () => {
     if (!user) {
       toast({
         title: "Login required",
-        description: "Please login to submit a review",
+        description: "Please log in to write a review",
       });
       navigate("/auth");
       return;
     }
-    
-    // Here you would submit the review to your database
-    // For now, we just show a success message since we don't have a reviews table
-    toast({
-      title: "Review submitted",
-      description: "Thank you for your feedback!",
-    });
-    
-    setShowReviewDialog(false);
-    setReviewText("");
   };
 
   if (loading) {
@@ -294,7 +279,7 @@ const handleSubmitReview = async () => {
       </div>
     );
   }
-  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+  
   const ownerDisplayName = owner?.username || owner?.full_name || "User";
   const formattedMemberSince = owner?.created_at ? 
     new Date(owner.created_at).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}) : 
@@ -313,7 +298,6 @@ const handleSubmitReview = async () => {
               <span className="mx-1">•</span>
               <span className="mx-1">•</span>
               <span>{listing.location}</span>
-              <span className="text-gray-500 ml-1">({listing.review_count} reviews)</span>
             </div>
           </div>
           
@@ -338,16 +322,7 @@ const handleSubmitReview = async () => {
           </Card>
           
           <Separator />
-           {/* Reviews */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Reviews</h2>
-              <div className="flex items-center">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                <span>{listing.average_rating.toFixed(1)}</span>
-                <span className="text-gray-600 ml-1">({listing.review_count} reviews)</span>
-              </div>
-            </div>
+          
           <div className="space-y-8">
             <ListingDetailInfo
               description={listing.description}
@@ -356,9 +331,7 @@ const handleSubmitReview = async () => {
               bookedRanges={bookedDateRanges}
             />
             
-          </div>
-        </div>
-        
+       
         {/* Right column: Booking widget */}
         <div className="w-full lg:w-4/12">
           {listing && (
@@ -387,52 +360,7 @@ const handleSubmitReview = async () => {
               rentalCode={rentalCode}
             />
           )}
-          {reviews.length > 0 ? (
-              <div className="space-y-4">
-                {displayedReviews.map((review: any) => (
-                  <Card key={review.id} className="border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={review.user.image} alt={review.user.name} />
-                          <AvatarFallback>{review.user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{review.user.name}</div>
-                          <div className="text-xs text-gray-500">{review.date}</div>
-                        </div>
-                      </div>
-                      <div className="flex mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
-                          />
-                        ))}
-                      </div>
-                      <p className="text-gray-700 text-sm">{review.comment}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                {reviews.length > 3 && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={() => setShowAllReviews(!showAllReviews)}
-                  >
-                    {showAllReviews ? "Show less" : "View all reviews"}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-gray-500 mb-4">No reviews yet.</p>
-                {!isOwner && (
-                  <Button onClick={() => setShowReviewDialog(true)}>
-                    Be the first to review
-                  </Button>
-                )}
+          
           {listing?.category && (
             <div className="mt-4 p-4 border rounded-lg">
               <p className="text-sm font-medium mb-2">Category</p>
@@ -443,43 +371,7 @@ const handleSubmitReview = async () => {
           )}
         </div>
       </div>
-       {/* Review Dialog */}
-      <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Write a Review</DialogTitle>
-            <DialogDescription>
-              Share your experience with this item and help others make informed decisions.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-2">
-            <div className="flex justify-center mb-2">
-              {[1, 2, 3, 4, 5].map((rating) => (
-                <Star 
-                  key={rating}
-                  className={`h-8 w-8 cursor-pointer ${
-                    rating <= reviewRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                  }`}
-                  onClick={() => setReviewRating(rating)}
-                />
-              ))}
-            </div>
-            
-            <Textarea
-              placeholder="Write your review here..."
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              rows={5}
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReviewDialog(false)}>Cancel</Button>
-            <Button onClick={handleSubmitReview}>Submit Review</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      
       {/* Success Dialog */}
       {showSuccessDialog && createdRentalId && (
         <PaymentSuccessDialog
