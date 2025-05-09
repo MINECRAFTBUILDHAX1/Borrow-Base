@@ -43,16 +43,7 @@ const ProfileTabs = ({ userData, isOwnProfile }: ProfileTabsProps) => {
         />
       </TabsContent>
       
-      <TabsContent value="rentals">
-        <RentalsTab 
-          rentals={userData.rentals}
-          userId={userData.id}
-        />
-      </TabsContent>
-      
-      <TabsContent value="reviews">
-        <ReviewsTab reviews={userData.reviews} />
-      </TabsContent>
+     
     </Tabs>
   );
 };
