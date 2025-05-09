@@ -68,6 +68,23 @@ const Messages = () => {
     if (user) {
       fetchConversations();
       fetchRentals();
+      
+      // Set up real-time subscription for message changes
+      const messageSubscription = supabase
+        .channel('messages-channel')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        }, () => {
+          fetchConversations();
+          fetchRentals();
+        })
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(messageSubscription);
+      };
     }
   }, [user]);
 

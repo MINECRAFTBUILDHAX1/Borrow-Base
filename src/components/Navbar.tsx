@@ -47,6 +47,7 @@ const Navbar = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'messages',
+          filter: `is_read=eq.true`
         }, () => {
           fetchUnreadCount();
         })

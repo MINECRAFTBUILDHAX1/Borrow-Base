@@ -18,26 +18,64 @@ const MobileNav = () => {
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
+      
+      // Set up real-time subscription for new messages
+      const messageSubscription = supabase
+        .channel('public:messages')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `is_read=eq.false,sender_id=neq.${user.id}`
+        }, () => {
+          fetchUnreadCount();
+        })
+        .subscribe();
+        
+      // Set up subscription for message updates (when messages are read)
+      const messageUpdateSubscription = supabase
+        .channel('public:messages:updates')
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `is_read=eq.true`
+        }, () => {
+          fetchUnreadCount();
+        })
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(messageSubscription);
+        supabase.removeChannel(messageUpdateSubscription);
+      };
     }
   }, [user]);
   
   const fetchUnreadCount = async () => {
     try {
+      if (!user) return;
+      
       // Count unread messages where the user is the recipient
-      const { count: conversationCount } = await supabase
+      const { count: conversationCount, error: convError } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('is_read', false)
-        .neq('sender_id', user?.id || '')
+        .neq('sender_id', user.id || '')
         .not('conversation_id', 'is', null);
 
-      const { count: rentalCount } = await supabase
+      const { count: rentalCount, error: rentalError } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('is_read', false)
-        .neq('sender_id', user?.id || '')
+        .neq('sender_id', user.id || '')
         .not('rental_id', 'is', null);
         
+      if (convError || rentalError) {
+        console.error("Error fetching unread counts:", convError || rentalError);
+        return;
+      }
+      
       setUnreadCount((conversationCount || 0) + (rentalCount || 0));
     } catch (error) {
       console.error('Error fetching unread messages:', error);

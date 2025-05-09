@@ -277,7 +277,9 @@ const MessagingDialog = ({
             conversation_id: currentConversationId,
             sender_id: user.id,
             message: messageText,
-            is_read: false
+            is_read: false,
+            // Add a null rental_id to satisfy TypeScript
+            rental_id: null
           };
           
           const { data, error } = await supabase
