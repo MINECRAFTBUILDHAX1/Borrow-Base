@@ -4,37 +4,40 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, MessageCircle, ShieldCheck } from "lucide-react";
+import { Calendar as CalendarIcon, MessageCircle, Mail, ShieldCheck } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 interface RentalSectionProps {
   listing: {
     price_per_day: number;
     security_deposit: number | null;
+    title: string;
   };
+  ownerEmail: string | null;
   startDate: Date | null;
   endDate: Date | null;
   totalPrice: number | null;
   handleDateSelect: (date: Date | undefined) => void;
   isDateDisabled: (date: Date) => boolean;
   handlePaymentInitiate: () => void;
-  handleContactOwner: () => void;
   rentalCode?: string | null;
 }
 
 const RentalSection = ({
   listing,
+  ownerEmail,
   startDate,
   endDate,
   totalPrice,
   handleDateSelect,
   isDateDisabled,
   handlePaymentInitiate,
-  handleContactOwner,
   rentalCode
 }: RentalSectionProps) => {
   // Add safety check for listing
@@ -52,6 +55,22 @@ const RentalSection = ({
 
   const days = startDate && endDate ? 
     Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 : 0;
+
+  const handleContactOwner = () => {
+    if (!ownerEmail) {
+      toast({
+        title: "Error",
+        description: "Could not find owner's email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const subject = `Inquiry about: ${listing.title}`;
+    const body = `Hello,\n\nI'm interested in renting your item: ${listing.title}.\n\nPlease let me know if it's available for the dates I'm looking for.\n\nThank you!`;
+    
+    window.location.href = `mailto:${ownerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
 
   return (
     <div className="sticky top-20">
@@ -148,8 +167,8 @@ const RentalSection = ({
             className="w-full flex items-center justify-center gap-2 mb-3" 
             onClick={handleContactOwner}
           >
-            <MessageCircle className="h-4 w-4" />
-            Contact Lender
+            <Mail className="h-4 w-4" />
+            Contact Lender via Email
           </Button>
           
           {/* Payment link - only show if dates are selected */}

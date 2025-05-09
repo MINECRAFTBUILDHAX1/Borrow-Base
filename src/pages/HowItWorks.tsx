@@ -1,120 +1,143 @@
 
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const HowItWorks = () => {
   return (
-    <div className="container mx-auto py-10 px-4">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">How BorrowBase Works</h1>
-        
-        <div className="prose max-w-none">
-          <p className="text-lg mb-8">
-            BorrowBase makes borrowing and lending simple, secure, and convenient. Here's how our platform works for both lenders and borrowers.
-          </p>
-          
-          <div className="mb-10">
-            <h2 className="text-2xl font-semibold mb-6">For Borrowers</h2>
-            
-            <div className="space-y-8">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold">1</div>
-                <div>
-                  <h3 className="text-xl font-medium">Search for Items</h3>
-                  <p className="text-gray-600">Browse our extensive catalog to find the item you need. Filter by category, location, and availability to narrow down your options.</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold">2</div>
-                <div>
-                  <h3 className="text-xl font-medium">Request to Borrow</h3>
-                  <p className="text-gray-600">Select your rental dates and submit a request to the lender. You can communicate directly to ask questions or discuss details.</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold">3</div>
-                <div>
-                  <h3 className="text-xl font-medium">Pay Securely</h3>
-                  <p className="text-gray-600">Once your request is approved, make a secure payment through our platform. Your payment is held safely until the rental is complete.</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold">4</div>
-                <div>
-                  <h3 className="text-xl font-medium">Arrange Collection</h3>
-                  <p className="text-gray-600">Coordinate with the lender to collect the item. Check that everything is as described before taking it home.</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-purple text-white flex items-center justify-center font-bold">5</div>
-                <div>
-                  <h3 className="text-xl font-medium">Return & Review</h3>
-                  <p className="text-gray-600">Return the item in the same condition as you received it. Leave a review about your experience to help the community.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mb-10">
-            <h2 className="text-2xl font-semibold mb-6">For Lenders</h2>
-            
-            <div className="space-y-8">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold">1</div>
-                <div>
-                  <h3 className="text-xl font-medium">List Your Items</h3>
-                  <p className="text-gray-600">Create detailed listings with photos, descriptions, and pricing for the items you want to rent out.</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold">2</div>
-                <div>
-                  <h3 className="text-xl font-medium">Approve Requests</h3>
-                  <p className="text-gray-600">Review rental requests and communicate with potential borrowers. Accept requests from users you feel comfortable lending to.</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold">3</div>
-                <div>
-                  <h3 className="text-xl font-medium">Arrange Handover</h3>
-                  <p className="text-gray-600">Coordinate the collection of your item and provide any necessary instructions on its use.</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold">4</div>
-                <div>
-                  <h3 className="text-xl font-medium">Get Paid</h3>
-                  <p className="text-gray-600">Once the rental period is complete and the item is returned in good condition, the payment is released to your account.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-8 text-center">
-            <h3 className="text-xl font-semibold mb-4">Ready to get started?</h3>
-            <div className="flex justify-center gap-4">
-              <Link to="/explore">
-                <Button>
-                  Find Items to Borrow
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              
-              <Link to="/create-listing">
-                <Button variant="outline">
-                  List Your Item
-                </Button>
-              </Link>
-            </div>
-          </div>
+    <div className="container mx-auto py-12 px-4">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold mb-4">How It Works</h1>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          Borrowing and lending made easy. Follow these simple steps to get started.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <span className="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-brand-purple">1</span>
+              Create an account
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              Sign up with your email. Verify your account and complete your profile to start using the platform.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <span className="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-brand-purple">2</span>
+              Browse listings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              Search for items you need by location, category, and availability. Check reviews and item descriptions.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <span className="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-brand-purple">3</span>
+              Contact the lender
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              Use the "Contact Lender" button to send an email directly to the item owner. Your default email client will open with a pre-populated message.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <span className="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-brand-purple">4</span>
+              Select dates
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              Once you've discussed availability with the lender via email, select the dates you want to rent the item for.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <span className="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-brand-purple">5</span>
+              Make payment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              Pay securely through our platform. Once payment is confirmed, you'll receive a rental code to share with the lender.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <span className="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-brand-purple">6</span>
+              Meet and exchange
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              Meet the lender at the agreed location, verify the item condition, and share your rental code to confirm the exchange.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="max-w-3xl mx-auto bg-gray-50 p-8 rounded-lg">
+        <h2 className="text-2xl font-bold mb-4 text-center">Listing Your Items</h2>
+        <ol className="space-y-4">
+          <li className="flex">
+            <span className="bg-brand-purple text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">1</span>
+            <p>Click the "Create Listing" button in the navigation bar.</p>
+          </li>
+          <li className="flex">
+            <span className="bg-brand-purple text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">2</span>
+            <p>Add photos, details, pricing, and availability for your item.</p>
+          </li>
+          <li className="flex">
+            <span className="bg-brand-purple text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">3</span>
+            <p>Set any specific rules or requirements for borrowers.</p>
+          </li>
+          <li className="flex">
+            <span className="bg-brand-purple text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">4</span>
+            <p>Publish your listing and wait for potential borrowers to contact you via email.</p>
+          </li>
+          <li className="flex">
+            <span className="bg-brand-purple text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">5</span>
+            <p>When borrowers contact you, communicate through email to arrange the details.</p>
+          </li>
+          <li className="flex">
+            <span className="bg-brand-purple text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">6</span>
+            <p>Meet the borrower, verify their rental code, and hand over your item.</p>
+          </li>
+        </ol>
+      </div>
+
+      <div className="mt-12 text-center">
+        <h2 className="text-2xl font-bold mb-4">Still have questions?</h2>
+        <p className="mb-6">Check out our FAQ or contact our support team</p>
+        <div className="flex justify-center space-x-4">
+          <a href="/help-center" className="bg-brand-purple text-white px-6 py-2 rounded-md hover:bg-brand-purple-dark transition-colors">
+            Help Center
+          </a>
+          <a href="/contact" className="border border-gray-300 px-6 py-2 rounded-md hover:bg-gray-100 transition-colors">
+            Contact Support
+          </a>
         </div>
       </div>
     </div>

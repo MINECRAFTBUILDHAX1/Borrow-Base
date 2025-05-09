@@ -8,14 +8,13 @@ import RentalSection from "@/components/listing/RentalSection";
 import ListingDetailInfo from "@/components/listing/ListingDetailInfo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Star, User, MessageCircle, PenSquare } from "lucide-react";
+import { Star, User, PenSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import PaymentSuccessDialog from "@/components/PaymentSuccessDialog";
-import MessagingDialog from "@/components/MessagingDialog";
 
 interface Listing {
   id: string;
@@ -39,6 +38,7 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  email: string | null;
   created_at: string;
 }
 
@@ -51,6 +51,7 @@ const ListingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [listing, setListing] = useState<Listing | null>(null);
   const [owner, setOwner] = useState<Profile | null>(null);
+  const [ownerEmail, setOwnerEmail] = useState<string | null>(null);
   const [bookedDateRanges, setBookedDateRanges] = useState<BookedDateRange[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -61,7 +62,6 @@ const ListingDetails = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [createdRentalId, setCreatedRentalId] = useState<string | null>(null);
   const [rentalCode, setRentalCode] = useState<string | null>(null);
-  const [showMessageDialog, setShowMessageDialog] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -94,17 +94,18 @@ const ListingDetails = () => {
         if (listingData) {
           setListing(listingData as Listing);
           
-          // Fetch the owner's profile
+          // Fetch the owner's profile including email
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', listingData.user_id)
-            .maybeSingle();
+            .single();
             
           if (profileError) {
             console.error("Error fetching owner profile:", profileError);
           } else if (profileData) {
             setOwner(profileData as Profile);
+            setOwnerEmail(profileData.email);
           }
           
           // Fetch booked date ranges
@@ -242,28 +243,6 @@ const ListingDetails = () => {
     }
   };
 
-  const handleContactOwner = () => {
-    if (!user) {
-      toast({
-        title: "Login required",
-        description: "Please log in to contact the lender",
-      });
-      navigate("/auth");
-      return;
-    }
-    
-    if (!listing || !owner) {
-      toast({
-        title: "Error",
-        description: "Listing information is missing",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setShowMessageDialog(true);
-  };
-
   const handleReview = () => {
     if (!user) {
       toast({
@@ -380,6 +359,7 @@ const ListingDetails = () => {
           {listing && (
             <RentalSection
               listing={listing}
+              ownerEmail={ownerEmail}
               startDate={startDate}
               endDate={endDate}
               totalPrice={totalPrice}
@@ -399,7 +379,6 @@ const ListingDetails = () => {
                 );
               }}
               handlePaymentInitiate={handleBookNow}
-              handleContactOwner={handleContactOwner}
               rentalCode={rentalCode}
             />
           )}
@@ -422,19 +401,6 @@ const ListingDetails = () => {
           onOpenChange={setShowSuccessDialog}
           rentalCode={rentalCode || ""}
           rentalId={createdRentalId || ""}
-        />
-      )}
-
-      {/* Message Dialog */}
-      {showMessageDialog && listing && owner && (
-        <MessagingDialog
-          open={showMessageDialog}
-          onOpenChange={setShowMessageDialog}
-          recipientId={owner.id}
-          recipientName={ownerDisplayName}
-          recipientImage={owner.avatar_url || undefined}
-          listingId={listing.id}
-          listingTitle={listing.title}
         />
       )}
     </div>
