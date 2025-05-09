@@ -49,7 +49,6 @@ const ListingCard = ({
             <h3 className="font-medium text-gray-900 line-clamp-1">{title}</h3>
             <div className="flex items-center gap-1 text-sm">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span>{rating.toFixed(1)}</span>
               <span className="text-gray-500">({reviewCount})</span>
             </div>
           </div>
