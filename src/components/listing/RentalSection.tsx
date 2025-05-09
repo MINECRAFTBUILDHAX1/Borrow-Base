@@ -146,15 +146,7 @@ const RentalSection = ({
             )}
           </div>
           
-          {/* Contact Lender button - always visible */}
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center justify-center gap-2 mb-3" 
-            onClick={handleContactOwner}
-          >
-            <Mail className="h-4 w-4" />
-            Contact Lender via Email
-          </Button>
+   
           
           {/* Payment link - only show if dates are selected */}
           {startDate && endDate && totalPrice ? (
