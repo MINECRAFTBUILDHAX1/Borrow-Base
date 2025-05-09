@@ -245,6 +245,16 @@ const ListingDetails = () => {
     }
   };
 
+  const handleReview = () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please log in to write a review",
+      });
+      navigate("/auth");
+      return;
+    }
+  };
 
   if (loading) {
     return (
@@ -267,11 +277,13 @@ const ListingDetails = () => {
           </Button>
         </div>
       </div>
-      );
+    );
   }
-    
   
-  
+  const ownerDisplayName = owner?.username || owner?.full_name || "User";
+  const formattedMemberSince = owner?.created_at ? 
+    new Date(owner.created_at).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}) : 
+    "Recently joined";
   
   return (
     <div className="container mx-auto py-8 px-4">
@@ -282,7 +294,9 @@ const ListingDetails = () => {
             <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
             <div className="flex items-center text-gray-600">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+              <span>5.0</span>
               <span className="mx-1">•</span>
+              <span>No reviews yet</span>
               <span className="mx-1">•</span>
               <span>{listing.location}</span>
             </div>
@@ -318,7 +332,16 @@ const ListingDetails = () => {
               bookedRanges={bookedDateRanges}
             />
             
-       
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Write a review</h2>
+              <Button variant="outline" onClick={handleReview} className="flex items-center gap-2">
+                <PenSquare className="h-4 w-4" />
+                Write a Review
+              </Button>
+            </div>
+          </div>
+        </div>
+        
         {/* Right column: Booking widget */}
         <div className="w-full lg:w-4/12">
           {listing && (
