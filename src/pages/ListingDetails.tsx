@@ -277,7 +277,7 @@ const ListingDetails = () => {
           </Button>
         </div>
       </div>
-    );
+    
   }
   
   
