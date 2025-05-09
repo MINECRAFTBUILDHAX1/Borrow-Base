@@ -55,23 +55,7 @@ const RentalSection = ({
   const days = startDate && endDate ? 
     Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 : 0;
 
-  const handleContactOwner = () => {
-    if (!email) {
-      toast({
-        title: "Error",
-        description: "Could not find Lender's email address",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const subject = `Inquiry about: ${listing.title}`;
-    const body = `Hello,\n\nI'm interested in renting your item: ${listing.title}.\n\nPlease let me know if it's available for the dates I'm looking for.\n\nThank you!`;
-    
-    console.log("Email to contact:", email);
-
-    window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
+  
 
   return (
     <div className="sticky top-20">
