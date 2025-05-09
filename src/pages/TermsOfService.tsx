@@ -73,7 +73,7 @@ const TermsOfService = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">9. Contact Us</h2>
             <p>
-              If you have any questions about these Terms, please contact us at legal@borrowbase.co.uk.
+              If you have any questions about these Terms, please contact us at info@borrowbase.co.uk.
             </p>
           </section>
         </div>
