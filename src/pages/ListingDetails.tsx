@@ -278,7 +278,7 @@ const ListingDetails = () => {
         </div>
       </div>
     
-  }
+  
   
   
   return (
