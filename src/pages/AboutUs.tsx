@@ -13,7 +13,7 @@ const AboutUs = () => {
           </p>
           
           <p className="mb-4">
-            Founded in 2023, our mission is to create a more sustainable world by making borrowing easy, affordable, and accessible to everyone. We believe in the power of the sharing economy to reduce waste, save money, and bring communities together.
+            Founded in 2025, our mission is to create a more sustainable world by making borrowing easy, affordable, and accessible to everyone. We believe in the power of the sharing economy to reduce waste, save money, and bring communities together.
           </p>
           
           <h2 className="text-2xl font-semibold mt-8 mb-4">Our Vision</h2>
