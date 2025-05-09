@@ -128,14 +128,7 @@ const Navbar = () => {
               <Link to="/create-listing" className="text-gray-600 hover:text-brand-purple transition-colors">
                 List Your Item
               </Link>
-              <Link to="/messages" className="text-gray-600 hover:text-brand-purple transition-colors relative">
-                Messages
-                {unreadCount > 0 && (
-                  <Badge className="absolute -top-2 -right-3 h-5 w-5 p-0 flex items-center justify-center bg-red-500">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Badge>
-                )}
-              </Link>
+             
             </div>
           </div>
           <div className="flex items-center gap-4">
