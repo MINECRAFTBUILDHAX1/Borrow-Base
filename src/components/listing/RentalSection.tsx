@@ -1,3 +1,32 @@
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, MessageCircle, Mail, ShieldCheck } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { toast } from "@/hooks/use-toast";
+
+interface RentalSectionProps {
+  listing: {
+    price_per_day: number;
+    security_deposit: number | null;
+    title: string;
+  };
+  email: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  totalPrice: number | null;
+  handleDateSelect: (date: Date | undefined) => void;
+  isDateDisabled: (date: Date) => boolean;
+  handlePaymentInitiate: () => void;
+  rentalCode?: string | null;
+}
 const RentalSection = ({
   listing,
   email,
@@ -160,3 +189,4 @@ const RentalSection = ({
     </div>
   );
 };
+export default RentalSection;
