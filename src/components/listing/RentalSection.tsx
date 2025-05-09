@@ -50,6 +50,9 @@ const RentalSection = ({
     );
   }
 
+  const days = startDate && endDate ? 
+    Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 : 0;
+
   return (
     <div className="sticky top-20">
       <Card>
@@ -115,9 +118,11 @@ const RentalSection = ({
                   <span>Total</span>
                   <span className="font-semibold">£{totalPrice}</span>
                 </div>
-                <p className="text-xs text-gray-500">
-                  For {Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
-                </p>
+                {days > 0 && (
+                  <p className="text-xs text-gray-500">
+                    For {days} days
+                  </p>
+                )}
                 {rentalCode && (
                   <p className="mt-2 text-sm font-medium text-center text-brand-purple">
                     Your rental code: {rentalCode}
@@ -126,7 +131,6 @@ const RentalSection = ({
               </div>
             )}
             
-            {/* Add a null check for security_deposit */}
             {listing.security_deposit && listing.security_deposit > 0 && (
               <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-3">
                 <ShieldCheck className="h-5 w-5 text-gray-500" />
@@ -137,6 +141,16 @@ const RentalSection = ({
               </div>
             )}
           </div>
+          
+          {/* Contact Lender button - always visible */}
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2 mb-3" 
+            onClick={handleContactOwner}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Contact Lender
+          </Button>
           
           {/* Payment link - only show if dates are selected */}
           {startDate && endDate && totalPrice ? (
@@ -157,21 +171,17 @@ const RentalSection = ({
                   <span className="ml-2 text-sm bg-white/20 px-1 rounded">{rentalCode}</span>
                 </a>
               ) : (
-                <a 
-                  href="#" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handlePaymentInitiate();
-                  }}
-                  className="bg-[#0070BA] hover:bg-[#003087] text-white font-medium py-2 px-4 rounded flex items-center justify-center"
+                <Button 
+                  className="w-full bg-[#0070BA] hover:bg-[#003087] text-white"
+                  onClick={handlePaymentInitiate}
                 >
                   <img 
                     src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
                     alt="PayPal" 
                     className="h-5 mr-2"
                   />
-                  Pay with PayPal (GBP {totalPrice.toFixed(2)})
-                </a>
+                  Reserve Now (GBP {totalPrice.toFixed(2)})
+                </Button>
               )}
             </div>
           ) : (
@@ -179,15 +189,6 @@ const RentalSection = ({
               Please select start and end dates to proceed with payment
             </div>
           )}
-          
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center justify-center gap-2" 
-            onClick={handleContactOwner}
-          >
-            <MessageCircle className="h-4 w-4" />
-            Contact Lender
-          </Button>
           
           <p className="text-xs text-center mt-4 text-gray-500">
             85% of the payment goes to the lender within 2 days of rental start

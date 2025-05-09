@@ -186,7 +186,10 @@ const ListingDetails = () => {
     setIsSubmitting(true);
     
     try {
-      // Create the rental - note that rental_code is generated on the server via a trigger
+      // Generate a rental code on the client side as temporary solution
+      const tempRentalCode = `BBR-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      
+      // Create the rental with the temporary code
       const { data: rentalData, error } = await supabase
         .from('rentals')
         .insert({
@@ -197,7 +200,8 @@ const ListingDetails = () => {
           end_date: endDate.toISOString(),
           total_price: totalPrice,
           currency: "GBP",
-          status: "waiting_for_payment"
+          status: "waiting_for_payment",
+          rental_code: tempRentalCode
         })
         .select('id, rental_code')
         .single();
@@ -219,6 +223,35 @@ const ListingDetails = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleContactOwner = () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please log in to contact the lender",
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    if (!listing || !owner) {
+      toast({
+        title: "Error",
+        description: "Listing information is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    navigate("/messages", { 
+      state: { 
+        recipientId: owner.id,
+        recipientName: owner.username || owner.full_name || "User",
+        listingId: listing.id,
+        listingTitle: listing.title
+      } 
+    });
   };
 
   if (loading) {
@@ -246,6 +279,9 @@ const ListingDetails = () => {
   }
   
   const ownerDisplayName = owner?.username || owner?.full_name || "User";
+  const formattedMemberSince = owner?.created_at ? 
+    new Date(owner.created_at).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}) : 
+    "Unknown";
   
   return (
     <div className="container mx-auto py-8 px-4">
@@ -276,7 +312,7 @@ const ListingDetails = () => {
               </Avatar>
               <div>
                 <p className="font-medium">Listed by {ownerDisplayName}</p>
-                <p className="text-sm text-gray-500">Member since {new Date(owner?.created_at || '').toLocaleDateString('en-US', {month: 'long', year: 'numeric'})}</p>
+                <p className="text-sm text-gray-500">Member since {formattedMemberSince}</p>
               </div>
               <div className="ml-auto">
                 <Button
@@ -302,6 +338,18 @@ const ListingDetails = () => {
               rules={listing.rules}
               bookedRanges={bookedDateRanges}
             />
+            
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Write a review</h2>
+              <Button variant="outline" onClick={() => {
+                toast({
+                  title: "Coming soon",
+                  description: "Review feature will be available soon",
+                });
+              }}>
+                Write a Review
+              </Button>
+            </div>
           </div>
         </div>
         
@@ -329,17 +377,7 @@ const ListingDetails = () => {
                 );
               }}
               handlePaymentInitiate={handleBookNow}
-              handleContactOwner={() => {
-                if (!user) {
-                  toast({
-                    title: "Login required",
-                    description: "Please log in to contact the lender",
-                  });
-                  navigate("/auth");
-                  return;
-                }
-                // Add contact owner logic here
-              }}
+              handleContactOwner={handleContactOwner}
               rentalCode={rentalCode}
             />
           )}

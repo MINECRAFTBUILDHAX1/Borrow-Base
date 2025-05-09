@@ -44,37 +44,65 @@ const Profile = () => {
             
           if (!profileError && profileData) {
             profile = profileData;
+          } else {
+            console.error("Error fetching profile:", profileError);
+            toast({
+              title: "Error",
+              description: "Could not find user profile. Please try again.",
+              variant: "destructive",
+            });
           }
         }
         
         // If viewing someone else's profile, we need to use their data only
         const isViewingOtherProfile = user && userId !== user.id;
         
-        // Build user data from profile or auth metadata
-        const userData: UserData = {
-          id: userId || "",
-          name: profile?.username || 
-                profile?.full_name || 
-                (isViewingOtherProfile ? "Unknown User" : user?.user_metadata?.full_name) || 
-                (isViewingOtherProfile ? "" : user?.email?.split('@')[0]) || 
-                "Unknown User",
-          image: profile?.avatar_url || 
-                (isViewingOtherProfile ? "" : user?.user_metadata?.avatar_url) || 
+        if (profile) {
+          // Format member since date properly
+          let memberSince = "Unknown";
+          if (profile.created_at) {
+            try {
+              memberSince = new Date(profile.created_at).toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric'
+              });
+            } catch (error) {
+              console.error("Error formatting date:", error);
+            }
+          }
+          
+          // Build user data from profile or auth metadata
+          const userData: UserData = {
+            id: userId || "",
+            name: profile.username || 
+                  profile.full_name || 
+                  (isViewingOtherProfile ? "Unknown User" : user?.user_metadata?.full_name) || 
+                  (isViewingOtherProfile ? "" : user?.email?.split('@')[0]) || 
+                  "Unknown User",
+            image: profile.avatar_url || 
+                  (isViewingOtherProfile ? "" : user?.user_metadata?.avatar_url) || 
+                   "",
+            bio: profile.bio || 
+                 (isViewingOtherProfile ? "" : user?.user_metadata?.bio) || 
                  "",
-          bio: profile?.bio || 
-               (isViewingOtherProfile ? "" : user?.user_metadata?.bio) || 
-               "",
-          location: profile?.location || (isViewingOtherProfile ? "" : user?.user_metadata?.location || ""),
-          memberSince: new Date(profile?.created_at || (isViewingOtherProfile ? Date.now() : user?.created_at || Date.now())).toLocaleDateString('en-US', {month: 'long', year: 'numeric'}),
-          rating: 0,
-          reviewCount: 0,
-          verified: isViewingOtherProfile ? false : Boolean(user?.email_confirmed_at),
-          listings: [],
-          rentals: [],
-          reviews: []
-        };
+            location: profile.location || (isViewingOtherProfile ? "" : user?.user_metadata?.location || ""),
+            memberSince: memberSince,
+            rating: 0,
+            reviewCount: 0,
+            verified: isViewingOtherProfile ? false : Boolean(user?.email_confirmed_at),
+            listings: [],
+            rentals: [],
+            reviews: []
+          };
 
-        setUserData(userData);
+          setUserData(userData);
+        } else {
+          toast({
+            title: "User not found",
+            description: "The user profile you're trying to view doesn't exist.",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error("Error fetching user data:", error);
         toast({

@@ -21,7 +21,7 @@ const MobileNav = () => {
       
       // Set up real-time subscription for new messages
       const messageSubscription = supabase
-        .channel('public:messages')
+        .channel('public:messages:mobile')
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -34,7 +34,7 @@ const MobileNav = () => {
         
       // Set up subscription for message updates (when messages are read)
       const messageUpdateSubscription = supabase
-        .channel('public:messages:updates')
+        .channel('public:messages:updates:mobile')
         .on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',

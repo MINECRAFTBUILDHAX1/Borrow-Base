@@ -29,7 +29,7 @@ const Navbar = () => {
       
       // Set up real-time subscription for new messages
       const messageSubscription = supabase
-        .channel('public:messages')
+        .channel('public:messages:navbar')
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -42,7 +42,7 @@ const Navbar = () => {
         
       // Set up subscription for message status updates (marking as read)
       const messageUpdateSubscription = supabase
-        .channel('public:messages:updates')
+        .channel('public:messages:updates:navbar')
         .on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',

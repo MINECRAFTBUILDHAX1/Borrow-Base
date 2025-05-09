@@ -38,7 +38,7 @@ const ProfileHeader = ({ userData, isOwnProfile }: ProfileHeaderProps) => {
     <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
       <Avatar className="h-20 w-20 md:h-32 md:w-32">
         <AvatarImage src={userData.image} alt={userData.name} />
-        <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
+        <AvatarFallback>{userData.name.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
       
       <div className="flex-1">

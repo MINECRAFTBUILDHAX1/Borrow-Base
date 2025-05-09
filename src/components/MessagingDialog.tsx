@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
+import { Send } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface MessagingDialogProps {
   open: boolean;
@@ -23,30 +24,18 @@ interface MessagingDialogProps {
   recipientId: string;
   recipientName: string;
   recipientImage?: string;
-  listingTitle: string;
-  afterMessageSent?: () => void;
-  rentalId?: string;
   listingId?: string;
+  listingTitle?: string;
+  rentalId?: string;
+  afterMessageSent?: () => void;
 }
 
 interface Message {
   id: string;
+  sender_id: string;
   message: string;
   created_at: string;
-  sender_id: string;
   is_read: boolean;
-  rental_id?: string;
-  conversation_id?: string;
-}
-
-interface Conversation {
-  id: string;
-  listing_id: string;
-  sender_id: string;
-  recipient_id: string;
-  last_message?: string;
-  last_message_at?: string;
-  created_at: string;
 }
 
 const MessagingDialog = ({
@@ -55,36 +44,149 @@ const MessagingDialog = ({
   recipientId,
   recipientName,
   recipientImage,
+  listingId,
   listingTitle,
-  afterMessageSent,
   rentalId,
-  listingId
+  afterMessageSent
 }: MessagingDialogProps) => {
-  const [messageText, setMessageText] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [rental, setRental] = useState<any>(null);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const { toast } = useToast();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageText, setMessageText] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  // Fetch existing messages when the dialog opens
   useEffect(() => {
     if (open && user) {
+      setIsLoading(true);
+      
+      // Determine if we're using a rental or listing conversation
       if (rentalId) {
-        fetchMessagesByRentalId();
-        fetchRentalDetails();
+        fetchRentalMessages(rentalId);
       } else if (listingId) {
-        fetchMessagesByListingAndUsers();
+        // Check if a conversation already exists
+        findOrCreateConversation();
       }
     }
-  }, [open, rentalId, listingId, user]);
-
-  const fetchMessagesByRentalId = async () => {
-    if (!rentalId || !user) return;
+  }, [open, user, recipientId, listingId, rentalId]);
+  
+  // Set up real-time subscription for new messages
+  useEffect(() => {
+    let messageSubscription: any = null;
     
+    if (open && user) {
+      if (rentalId) {
+        // Subscribe to messages for this rental
+        messageSubscription = supabase
+          .channel(`rental-messages-${rentalId}`)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `rental_id=eq.${rentalId}`
+          }, handleNewMessage)
+          .subscribe();
+      } else if (currentConversationId) {
+        // Subscribe to messages for this conversation
+        messageSubscription = supabase
+          .channel(`conversation-messages-${currentConversationId}`)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${currentConversationId}`
+          }, handleNewMessage)
+          .subscribe();
+      }
+      
+      // Mark messages as read when the dialog opens
+      markMessagesAsRead();
+    }
+    
+    return () => {
+      if (messageSubscription) {
+        supabase.removeChannel(messageSubscription);
+      }
+    };
+  }, [open, user, currentConversationId, rentalId]);
+  
+  const handleNewMessage = (payload: any) => {
+    const newMessage = payload.new;
+    
+    // Add new message to the chat
+    setMessages(prev => [...prev, newMessage]);
+    
+    // Mark the message as read if it's from the other person
+    if (newMessage.sender_id !== user?.id && !newMessage.is_read) {
+      markMessageAsRead(newMessage.id);
+    }
+    
+    // Call the callback if provided
+    if (afterMessageSent) {
+      afterMessageSent();
+    }
+  };
+
+  const findOrCreateConversation = async () => {
     try {
-      const { data, error } = await supabase
+      if (!user || !recipientId || !listingId) return;
+      
+      // Check if a conversation already exists between these users for this listing
+      const { data: existingConvs, error: findError } = await supabase
+        .from('conversations')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id})`)
+        .eq('listing_id', listingId);
+      
+      if (findError) throw findError;
+      
+      if (existingConvs && existingConvs.length > 0) {
+        // Use the existing conversation
+        const conversationId = existingConvs[0].id;
+        setCurrentConversationId(conversationId);
+        fetchConversationMessages(conversationId);
+      } else {
+        // Create a new conversation
+        const { data: newConv, error: createError } = await supabase
+          .from('conversations')
+          .insert({
+            sender_id: user.id,
+            recipient_id: recipientId,
+            listing_id: listingId
+          })
+          .select()
+          .single();
+          
+        if (createError) throw createError;
+        
+        if (newConv) {
+          setCurrentConversationId(newConv.id);
+          setMessages([]);
+          setIsLoading(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error finding/creating conversation:', error);
+      toast({
+        title: "Error",
+        description: "Could not load or create conversation",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRentalMessages = async (rentalId: string) => {
+    try {
+      // Get all messages for this rental
+      const { data: messagesData, error } = await supabase
         .from('messages')
         .select('*')
         .eq('rental_id', rentalId)
@@ -92,217 +194,169 @@ const MessagingDialog = ({
         
       if (error) throw error;
       
-      if (data) {
-        setMessages(data as Message[]);
+      if (messagesData) {
+        setMessages(messagesData);
         
-        // Mark messages as read
-        const unreadMessages = data.filter(
-          msg => msg.sender_id !== user.id && !msg.is_read
-        );
-        
-        if (unreadMessages.length > 0) {
-          const unreadIds = unreadMessages.map(msg => msg.id);
-          await supabase
-            .from('messages')
-            .update({ is_read: true })
-            .in('id', unreadIds);
-        }
+        // Mark unread messages as read
+        markMessagesAsRead();
       }
+      
+      setIsLoading(false);
     } catch (error) {
-      console.error("Error fetching messages:", error);
+      console.error('Error fetching rental messages:', error);
+      toast({
+        title: "Error",
+        description: "Could not load messages",
+        variant: "destructive",
+      });
+      setIsLoading(false);
     }
   };
 
-  const fetchMessagesByListingAndUsers = async () => {
-    if (!listingId || !user) return;
-    
+  const fetchConversationMessages = async (conversationId: string) => {
     try {
-      // First check if a conversation already exists between these users for this listing
-      const { data: conversationsData, error: conversationsError } = await supabase
-        .from('conversations')
+      // Get all messages for this conversation
+      const { data: messagesData, error } = await supabase
+        .from('messages')
         .select('*')
-        .eq('listing_id', listingId)
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
-      
-      if (conversationsError) {
-        throw conversationsError;
-      }
-      
-      // Find the conversation between the current user and the recipient
-      const conversation = conversationsData?.find(conv => 
-        (conv.sender_id === user.id && conv.recipient_id === recipientId) || 
-        (conv.sender_id === recipientId && conv.recipient_id === user.id)
-      ) as Conversation | undefined;
-      
-      if (conversation) {
-        setConversationId(conversation.id);
-        
-        // Fetch messages for this conversation
-        const { data: messagesData, error: messagesError } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('conversation_id', conversation.id)
-          .order('created_at', { ascending: true });
-          
-        if (messagesError) throw messagesError;
-        
-        if (messagesData) {
-          setMessages(messagesData as Message[]);
-          
-          // Mark messages as read
-          const unreadMessages = messagesData.filter(
-            msg => msg.sender_id !== user.id && !msg.is_read
-          );
-          
-          if (unreadMessages.length > 0) {
-            const unreadIds = unreadMessages.map(msg => msg.id);
-            await supabase
-              .from('messages')
-              .update({ is_read: true })
-              .in('id', unreadIds);
-          }
-        }
-      } else {
-        // No conversation exists yet
-        setMessages([]);
-        setConversationId(null);
-      }
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    }
-  };
-
-  const fetchRentalDetails = async () => {
-    if (!rentalId) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('rentals')
-        .select('*, listing:listing_id(title)')
-        .eq('id', rentalId)
-        .single();
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
         
       if (error) throw error;
       
-      if (data) {
-        setRental(data);
+      if (messagesData) {
+        setMessages(messagesData);
+        
+        // Mark unread messages as read
+        markMessagesAsRead();
+      }
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching conversation messages:', error);
+      toast({
+        title: "Error",
+        description: "Could not load messages",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const markMessagesAsRead = async () => {
+    try {
+      if (!user) return;
+      
+      let updateQuery;
+      
+      if (rentalId) {
+        updateQuery = supabase
+          .from('messages')
+          .update({ is_read: true })
+          .eq('rental_id', rentalId)
+          .eq('is_read', false)
+          .neq('sender_id', user.id);
+      } else if (currentConversationId) {
+        updateQuery = supabase
+          .from('messages')
+          .update({ is_read: true })
+          .eq('conversation_id', currentConversationId)
+          .eq('is_read', false)
+          .neq('sender_id', user.id);
+      }
+      
+      if (updateQuery) {
+        const { error } = await updateQuery;
+        
+        if (error) {
+          console.error('Error marking messages as read:', error);
+        } else {
+          // Update local message state to mark messages as read
+          setMessages(prev => prev.map(msg => 
+            msg.sender_id !== user.id ? { ...msg, is_read: true } : msg
+          ));
+        }
       }
     } catch (error) {
-      console.error("Error fetching rental details:", error);
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
+  const markMessageAsRead = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('id', messageId);
+        
+      if (error) {
+        console.error('Error marking message as read:', error);
+      }
+    } catch (error) {
+      console.error('Error marking message as read:', error);
     }
   };
 
   const handleSendMessage = async () => {
-    if (!messageText.trim()) {
-      toast({
-        title: "Message required",
-        description: "Please enter a message to send",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "You must be logged in to send messages",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    if (!messageText.trim() || !user) return;
+    
     setIsSending(true);
-
+    
     try {
-      // Different logic based on whether this is a rental message or a listing inquiry
+      let messageData;
+      
+      // Create the message for either rental or conversation
       if (rentalId) {
-        // For existing rentals
-        const { data, error } = await supabase
-          .from('messages')
-          .insert({
-            rental_id: rentalId,
-            sender_id: user.id,
-            message: messageText,
-            is_read: false
+        messageData = {
+          rental_id: rentalId,
+          sender_id: user.id,
+          message: messageText,
+          is_read: false
+        };
+      } else if (currentConversationId) {
+        messageData = {
+          conversation_id: currentConversationId,
+          sender_id: user.id,
+          message: messageText,
+          is_read: false,
+          rental_id: null
+        };
+      } else {
+        throw new Error("No conversation or rental ID available");
+      }
+      
+      const { data, error } = await supabase
+        .from('messages')
+        .insert(messageData)
+        .select();
+        
+      if (error) throw error;
+      
+      // Update conversation last message if using a conversation
+      if (currentConversationId) {
+        const { error: updateError } = await supabase
+          .from('conversations')
+          .update({
+            last_message: messageText,
+            last_message_at: new Date().toISOString()
           })
-          .select('*');
+          .eq('id', currentConversationId);
           
-        if (error) throw error;
-        
-        if (data) {
-          setMessageText("");
-          setMessages([...messages, data[0] as Message]);
-          if (afterMessageSent) {
-            afterMessageSent();
-          }
-        }
-      } else if (listingId) {
-        // For listing inquiries, we need to create or use existing conversation
-        let currentConversationId = conversationId;
-        
-        if (!currentConversationId) {
-          // Create new conversation first
-          const { data: convData, error: convError } = await supabase
-            .from('conversations')
-            .insert({
-              listing_id: listingId,
-              sender_id: user.id,
-              recipient_id: recipientId,
-              last_message: messageText,
-              last_message_at: new Date().toISOString()
-            })
-            .select('*');
-            
-          if (convError) throw convError;
-          
-          if (convData && convData.length > 0) {
-            currentConversationId = convData[0].id;
-            setConversationId(currentConversationId);
-          }
-        } else {
-          // Update existing conversation with last message
-          await supabase
-            .from('conversations')
-            .update({
-              last_message: messageText,
-              last_message_at: new Date().toISOString()
-            })
-            .eq('id', currentConversationId);
-        }
-        
-        if (currentConversationId) {
-          // Now insert the message linked to the conversation
-          const messageData = {
-            conversation_id: currentConversationId,
-            sender_id: user.id,
-            message: messageText,
-            is_read: false,
-            // Add a null rental_id to satisfy TypeScript
-            rental_id: null
-          };
-          
-          const { data, error } = await supabase
-            .from('messages')
-            .insert(messageData)
-            .select('*');
-            
-          if (error) throw error;
-          
-          if (data) {
-            setMessageText("");
-            setMessages([...messages, data[0] as Message]);
-            if (afterMessageSent) {
-              afterMessageSent();
-            }
-          }
+        if (updateError) {
+          console.error('Error updating conversation:', updateError);
         }
       }
+      
+      setMessageText('');
+      
+      if (afterMessageSent) {
+        afterMessageSent();
+      }
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
       toast({
-        title: "Failed to send message",
-        description: "There was a problem sending your message. Please try again.",
+        title: "Error",
+        description: "Failed to send message",
         variant: "destructive",
       });
     } finally {
@@ -310,74 +364,97 @@ const MessagingDialog = ({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+  const formatMessageTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      
+      // If it's today, just show the time
+      const today = new Date();
+      if (date.toDateString() === today.toDateString()) {
+        return format(date, 'h:mm a');
+      }
+      
+      // Otherwise show the date and time
+      return format(date, 'MMM d, h:mm a');
+    } catch (error) {
+      return '';
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Message about "{listingTitle}"</DialogTitle>
-          <DialogDescription>
-            {rental?.rental_code ? 
-              `Rental code: ${rental.rental_code}` :
-              "Send a message to arrange pickup/delivery and details about the rental"
-            }
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="flex items-center gap-4 mb-4">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={recipientImage} alt={recipientName} />
-              <AvatarFallback>{recipientName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">{recipientName}</p>
-              <p className="text-sm text-gray-500">{user?.id === rental?.seller_id ? "Renter" : "Lender"}</p>
-            </div>
+      <DialogContent className="sm:max-w-md md:max-w-lg max-h-[80vh] flex flex-col">
+        <div className="flex items-center gap-3 pb-3 border-b">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={recipientImage} />
+            <AvatarFallback>{recipientName.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium">{recipientName}</p>
+            {listingTitle && <p className="text-sm text-gray-500">Re: {listingTitle}</p>}
           </div>
-
-          {messages.length > 0 && (
-            <div className="max-h-60 overflow-y-auto border rounded-md p-3 mb-4">
-              {messages.map((message) => (
+        </div>
+        
+        <div className="flex-1 overflow-y-auto py-4 min-h-[300px]">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-full">
+              <p>Loading messages...</p>
+            </div>
+          ) : messages.length > 0 ? (
+            <div className="space-y-4">
+              {messages.map(message => (
                 <div 
                   key={message.id} 
-                  className={`mb-3 ${message.sender_id === user?.id ? 'text-right' : 'text-left'}`}
+                  className={`flex flex-col ${message.sender_id === user?.id ? 'items-end' : 'items-start'}`}
                 >
                   <div 
-                    className={`inline-block max-w-[80%] px-3 py-2 rounded-lg ${
+                    className={`max-w-[70%] px-4 py-2 rounded-lg ${
                       message.sender_id === user?.id 
-                        ? 'bg-brand-purple text-white' 
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-brand-purple text-white rounded-br-none' 
+                        : 'bg-gray-100 text-gray-800 rounded-bl-none'
                     }`}
                   >
                     <p>{message.message}</p>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formatDate(message.created_at)}
-                  </p>
+                  <span className="text-xs text-gray-500 mt-1">
+                    {formatMessageTime(message.created_at)}
+                    {message.sender_id === user?.id && (
+                      <span className="ml-1">{message.is_read ? '• Read' : ''}</span>
+                    )}
+                  </span>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
+            </div>
+          ) : (
+            <div className="flex justify-center items-center h-full">
+              <p className="text-gray-500">No messages yet. Start the conversation!</p>
             </div>
           )}
-          
+        </div>
+        
+        <div className="flex gap-2 pt-3 mt-auto">
           <Textarea 
-            placeholder="Type your message here..." 
-            className="min-h-24"
+            placeholder="Type a message..." 
+            className="resize-none"
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
           />
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isSending}>Cancel</Button>
-          </DialogClose>
-          <Button onClick={handleSendMessage} disabled={isSending}>
-            {isSending ? "Sending..." : "Send Message"}
+          <Button 
+            type="submit" 
+            size="icon"
+            disabled={isSending || !messageText.trim()} 
+            onClick={handleSendMessage}
+          >
+            <Send className="h-4 w-4" />
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
