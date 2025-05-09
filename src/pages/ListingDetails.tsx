@@ -245,16 +245,6 @@ const ListingDetails = () => {
     }
   };
 
-  const handleReview = () => {
-    if (!user) {
-      toast({
-        title: "Login required",
-        description: "Please log in to write a review",
-      });
-      navigate("/auth");
-      return;
-    }
-  };
 
   if (loading) {
     return (
@@ -277,6 +267,8 @@ const ListingDetails = () => {
           </Button>
         </div>
       </div>
+      );
+  }
     
   
   
