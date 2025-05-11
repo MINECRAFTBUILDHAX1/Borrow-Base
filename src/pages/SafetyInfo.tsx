@@ -62,7 +62,7 @@ const SafetyInfo = () => {
                 <strong>Return on time:</strong> Always return items at the agreed-upon time and in the same condition you received them.
               </li>
               <li className="mb-2">
-                <strong>Report issues promptly:</strong> If you encounter any problems with a rented item, inform the lender immediately.
+                <strong>Report issues promptly:</strong> If you encounter any problems with a rented item, inform our support team immediately at: support@borrowbase.co.uk 
               </li>
             </ul>
           </section>
