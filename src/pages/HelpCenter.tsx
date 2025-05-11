@@ -33,7 +33,7 @@ const HelpCenter = () => {
             <div className="border-b pb-4">
               <h3 className="text-xl font-medium mb-2">What if an item is damaged during rental?</h3>
               <p>
-                We recommend that lenders and borrowers thoroughly document the condition of items before and after rental. If an item is damaged, the lender should contact BorrowBase Support at <a href="mailto:support@borrowbase.co.uk?subject=BorrowBase Support Query" className="font-semibold text-blue-600 underline">support@borrowbase.co.uk</a>to resolve the issue. If an agreement can't be reached, contact our support team for assistance.
+                We recommend that lenders and borrowers thoroughly document the condition of items before and after rental. If an item is damaged, the lender should contact BorrowBase Support at <a href="mailto:support@borrowbase.co.uk?subject=BorrowBase Support Query" className="font-semibold text-blue-600 underline">support@borrowbase.co.uk</a> to resolve the issue. If an agreement can't be reached, contact our support team for assistance.
               </p>
             </div>
             
