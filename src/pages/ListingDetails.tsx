@@ -148,17 +148,27 @@ const ListingDetails = () => {
     fetchListingData();
   }, [id, toast]);
 
-  const calculateRentalPrice = (start: Date | null, end: Date | null) => {
-    if (!start || !end || !listing) return { days: 0, price: 0 };
-    
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return {
-      days,
-      price: days * listing.price_per_day
-    };
+const calculateRentalPrice = (start: Date | null, end: Date | null) => {
+  if (!start || !end || !listing) return { days: 0, price: 0 };
+
+  const startDate = new Date(start.setHours(0, 0, 0, 0));
+  const endDate = new Date(end.setHours(0, 0, 0, 0));
+
+  let diffTime = endDate.getTime() - startDate.getTime();
+  let days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  // Count minimum 1 day
+  if (days <= 0) days = 1;
+
+  const rentalCost = days * listing.price_per_day;
+  const totalPrice = rentalCost + listing.security_deposit;
+
+  return {
+    days,
+    price: totalPrice
   };
+};
+
 
   const handleDateChange = (startDate: Date | null, endDate: Date | null) => {
     setStartDate(startDate);
