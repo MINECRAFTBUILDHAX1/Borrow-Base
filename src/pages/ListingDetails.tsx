@@ -154,10 +154,10 @@ const calculateRentalPrice = (start: Date | null, end: Date | null) => {
   const startDate = new Date(start.setHours(0, 0, 0, 0));
   const endDate = new Date(end.setHours(0, 0, 0, 0));
 
+  // +1 to include the end day too
   let diffTime = endDate.getTime() - startDate.getTime();
-  let days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  let days = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-  // Count minimum 1 day
   if (days <= 0) days = 1;
 
   const rentalCost = days * listing.price_per_day;
@@ -168,6 +168,7 @@ const calculateRentalPrice = (start: Date | null, end: Date | null) => {
     price: totalPrice
   };
 };
+
 
 
   const handleDateChange = (startDate: Date | null, endDate: Date | null) => {
