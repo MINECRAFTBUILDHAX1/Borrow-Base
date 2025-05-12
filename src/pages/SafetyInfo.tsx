@@ -73,7 +73,7 @@ const SafetyInfo = () => {
               If you ever feel unsafe or encounter suspicious behavior on our platform, please report it immediately. We take all safety concerns seriously and will investigate promptly.
             </p>
             <p>
-              Contact our safety team at info@borrowbase.co.uk or use the "Report" button on any listing or user profile.
+              Contact our safety team at support@borrowbase.co.uk
             </p>
           </section>
         </div>
