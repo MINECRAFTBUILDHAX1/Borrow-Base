@@ -58,7 +58,7 @@ const Footer = () => {
         </div>
         <div className="border-t border-gray-200 pt-6 flex flex-col md:flex-row justify-between">
           <div className="text-sm text-gray-600">
-            &copy; {new Date().getFullYear()} © 2025 Majcherczyk Digital Ltd. All rights reserved.
+            &copy; {new Date().getFullYear()} Majcherczyk Digital Ltd. All rights reserved.
           </div>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-gray-500 hover:text-gray-800">
